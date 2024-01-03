@@ -3,28 +3,35 @@ import Form from "react-bootstrap/Form";
 import { Button } from "react-bootstrap";
 import { css } from "@emotion/react";
 /** @jsxImportSource @emotion/react */
-import { patients } from "../../data/patients";
-import { useState, useEffect } from "react";
+import axios from "axios";
+
+import { useState } from "react";
 
 function CheckIn() {
   const checkInDate = new Date();
-  const [inputPatientId, setInputPatientId] = useState("");
+  const [inputPatientHN, setInputPatientHN] = useState("");
   const [checkInPatient, setCheckInPatient] = useState({});
   const [showDetail, setShowDetail] = useState(false);
 
-  const getPatients = async () => {
+  const fetchPatients = async () => {
     try {
-      const resultFetching = await patients();
-      const resultFilter = resultFetching.find((patient) => {
-        return patient.id === inputPatientId;
+      const response = await axios.get("http://localhost:2001/patients");
+      console.log(response);
+      const patientsData = response.data.data;
+
+      const resultFilter = patientsData.find((patient) => {
+        return patient.HN === inputPatientHN;
       });
+
       if (resultFilter) {
-        //if resultFilter not empty return true
+        // If resultFilter is not empty, return true
         setCheckInPatient(resultFilter);
         setShowDetail(true);
-      } else alert("not found");
+      } else {
+        alert("Patient not found");
+      }
     } catch (error) {
-      alert("fetching error");
+      alert("Fetching error");
     }
   };
 
@@ -52,9 +59,9 @@ function CheckIn() {
           <Form.Control
             type="text"
             onChange={(e) => {
-              setInputPatientId(e.target.value);
+              setInputPatientHN(e.target.value);
             }}
-            value={inputPatientId}
+            value={inputPatientHN}
           />
         </FloatingLabel>
         <FloatingLabel
@@ -70,7 +77,7 @@ function CheckIn() {
             flex: 1;
           `}
           onClick={() => {
-            getPatients();
+            fetchPatients();
           }}
         >
           Check In

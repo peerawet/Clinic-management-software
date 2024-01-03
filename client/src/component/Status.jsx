@@ -32,9 +32,9 @@ function Status() {
         .filter((branch) => {
           return branch.id === params.id;
         })
-        .map((detail) => {
+        .map((detail, index) => {
           return (
-            <Card style={{ width: "18rem" }}>
+            <Card key={index} style={{ width: "18rem" }}>
               <Card.Img variant="top" src={detail.picture} />
               <Card.Body>
                 <Card.Title>{detail.name}</Card.Title>

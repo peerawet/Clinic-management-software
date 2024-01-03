@@ -19,13 +19,14 @@ function FeatureList() {
         `}
       >
         <Tabs
-          defaultActiveKey="profile"
+          defaultActiveKey="Check in"
           id="uncontrolled-tab-example"
           className="mb-3"
         >
-          {features.map((feature) => {
+          {features.map((feature, index) => {
             return (
               <Tab
+                key={index}
                 eventKey={feature.name}
                 title={
                   <Card
@@ -64,9 +65,9 @@ function FeatureList() {
           }
         `}
       >
-        {features.map((feature) => {
+        {features.map((feature, index) => {
           return (
-            <Accordion defaultActiveKey="0" flush>
+            <Accordion key={index} defaultActiveKey="0" flush>
               <Accordion.Item eventKey="0">
                 <Accordion.Header>
                   <Card

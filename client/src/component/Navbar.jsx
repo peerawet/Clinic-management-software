@@ -30,9 +30,10 @@ function NavbarComponent() {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto">
             <NavDropdown title="Select Branch" id="basic-nav-dropdown">
-              {branchData.map((branch) => {
+              {branchData.map((branch, index) => {
                 return (
                   <NavDropdown.Item
+                    key={index}
                     onClick={() => {
                       navigate(`/${branch.id}`);
                     }}

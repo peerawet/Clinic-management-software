@@ -11,7 +11,6 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem("isLogin", isLogin.toString());
-    console.log(localStorage);
   }, [isLogin]);
 
   return (
