@@ -44,7 +44,7 @@ let appointments = [
     status: "booked",
   },
   {
-    id: "APPT-12-01-2024-11-SR240102-113433",
+    id: "APPT-SR-12-01-2024-11-SR240102-113433",
     day: "12",
     month: "01",
     year: "2024",
@@ -55,7 +55,7 @@ let appointments = [
     status: "booked",
   },
   {
-    id: "APPT-12-01-2024-10-SR240101-113433",
+    id: "APPT-SR-12-01-2024-10-SR240101-113433",
     day: "12",
     month: "01",
     year: "2024",
@@ -66,7 +66,7 @@ let appointments = [
     status: "booked",
   },
   {
-    id: "APPT-12-01-2024-12-SR240101-113433",
+    id: "APPT-SR-12-01-2024-12-SR240101-113433",
     day: "12",
     month: "01",
     year: "2024",
@@ -77,7 +77,7 @@ let appointments = [
     status: "booked",
   },
   {
-    id: "APPT-12-01-2024-14-RC240101-113433",
+    id: "APPT-SR-12-01-2024-14-RC240101-113433",
     day: "12",
     month: "01",
     year: "2024",

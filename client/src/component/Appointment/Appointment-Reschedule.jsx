@@ -14,60 +14,56 @@ import format from "date-fns/format";
 
 function AppointmentReschule() {
   const [inputPatientHN, setInputPatientHN] = useState("");
-  const [searchPatients, setSearchPatients] = useState([]);
+  const [searchAppointments, setSearchAppointment] = useState([]);
   const [showButtonPatient, setshowButtonPatient] = useState(false);
   const [showButtonDoctor, setshowButtonDoctor] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedTime, setSelectedTime] = useState("09");
   const [searchDoctors, setSearchDoctors] = useState([]);
+  const [newAppointmentId, setNewAppointmentId] = useState("");
 
   const params = useParams();
 
-  //patients section
+  //appointments section
 
-  const getSearchResources = async () => {
+  const getAppointments = async () => {
     try {
-      const response = await axios.get("http://localhost:3001/doctors");
-      const doctors = response.data.data;
-      let searchResources = [];
-      for (let doctor of doctors) {
-        let doctorInfo = { name: doctor.name, license: doctor.license };
-        for (let appointment of doctor.appointments) {
-          let combinedData = { ...doctorInfo, ...appointment };
-          searchResources.push(combinedData);
-        }
-      }
-      console.log(searchResources);
-      return searchResources;
+      const response = await axios.get("http://localhost:2001/appointments");
+      const appintments = response.data.data;
+      console.log(appintments);
+      return appintments;
     } catch (error) {
-      alert("Fetching patient hn error");
+      alert("Fetching appintments error");
     }
   };
 
-  const findPatients = (searchResources) => {
-    const resultFilter = searchResources.filter(
-      (patient) => patient.patientHN === inputPatientHN
+  const findAppointments = (appintments) => {
+    const specifyAppointments = appintments.filter(
+      (appointment) =>
+        appointment.HN === inputPatientHN && appointment.status === "booked"
     );
-    return resultFilter;
+
+    return specifyAppointments;
   };
 
-  const handleSearchPatients = async (event) => {
+  const handlesearchAppointments = async (event) => {
     event.preventDefault();
-    const searchResources = await getSearchResources();
-    const requestedData = findPatients(searchResources);
-    if (requestedData.length > 0) {
-      setSearchPatients([...requestedData]);
+    const appintments = await getAppointments();
+    const specifyAppointments = findAppointments(appintments);
+    if (specifyAppointments.length > 0) {
+      setSearchAppointment(specifyAppointments);
+
       setshowButtonPatient(true);
     } else {
-      alert("Patient not found");
+      alert("Specify Appointments not found");
     }
   };
 
-  const handleConfirmPatient = (confirmHN) => {
-    const result = searchPatients.filter((patient) => {
-      return patient.patientHN === confirmHN;
+  const handleConfirmPatient = (confirmAppointmentsId) => {
+    const confirmPatient = searchAppointments.filter((appointment) => {
+      return appointment.id === confirmAppointmentsId;
     });
-    setSearchPatients([...result]);
+    setSearchAppointment(confirmPatient);
     setshowButtonPatient(false);
   };
 
@@ -75,11 +71,19 @@ function AppointmentReschule() {
 
   const getDoctors = async () => {
     try {
-      const response = await axios.get("http://localhost:3001/doctors");
+      const response = await axios.get("http://localhost:2001/doctors");
       return response.data.data;
     } catch (error) {
       alert("Fetching error");
     }
+  };
+
+  const handleConfirmDoctor = (confirmlisence) => {
+    const result = searchDoctors.filter((doctor) => {
+      return doctor.license === confirmlisence;
+    });
+    setSearchDoctors([...result]);
+    setshowButtonDoctor(false);
   };
 
   const formatDate = () => {
@@ -93,40 +97,44 @@ function AppointmentReschule() {
     return dateObject;
   };
 
-  const findDoctors = (doctors) => {
+  const findAvailableDoctors = async (appointments) => {
     const dateObject = formatDate();
     const time = selectedTime;
-    const filteredDoctors = doctors.filter((doctor) => {
-      const hasMatchingAppointment = doctor.appointments.some(
+
+    const unAvailableDoctors = appointments
+      .filter(
         (appointment) =>
           appointment.year === dateObject.year &&
           appointment.month === dateObject.month &&
           appointment.day === dateObject.day &&
           appointment.time === time
-      );
+      )
+      .map((appointment) => appointment.license);
+    console.log(unAvailableDoctors);
+    // Fetch all doctors
+    const doctors = await getDoctors();
 
-      return !hasMatchingAppointment;
-    });
-    return filteredDoctors;
-  };
-
-  const handleConfirmDoctor = (confirmlisence) => {
-    const result = searchDoctors.filter((doctor) => {
-      return doctor.license === confirmlisence;
-    });
-    setSearchDoctors([...result]);
-    setshowButtonDoctor(false);
+    // Filter available doctors based on unAvailableDoctors array
+    const availableDoctors = doctors.filter(
+      (doctor) => !unAvailableDoctors.includes(doctor.license)
+    );
+    const availibleDoctorsInSpecificBranch = availableDoctors.filter(
+      (doctor) => doctor.branch === params.id.toLocaleUpperCase()
+    );
+    return availibleDoctorsInSpecificBranch;
   };
 
   const handleSearchDoctor = async (event) => {
     event.preventDefault();
-    const doctors = await getDoctors();
-    const requestedData = findDoctors(doctors);
-    if (requestedData.length > 0) {
-      setSearchDoctors([...requestedData]);
+    const appointments = await getAppointments();
+    const availableDoctors = await findAvailableDoctors(appointments);
+
+    if (availableDoctors.length > 0) {
+      setSearchDoctors([...availableDoctors]);
       setshowButtonDoctor(true);
     } else {
       alert("No available doctors found.");
+      setSearchDoctors([...availableDoctors]);
     }
   };
 
@@ -134,41 +142,49 @@ function AppointmentReschule() {
 
   const handleReschedule = async () => {
     if (
-      searchPatients.length === 1 &&
+      searchAppointments.length === 1 &&
       searchDoctors.length === 1 &&
       showButtonDoctor === false &&
       showButtonPatient === false
     ) {
       try {
-        const dateObject = formatDate();
+        const appointmentId = await createAppointmentIdAndPut();
+        setNewAppointmentId(appointmentId);
+      } catch (error) {
+        alert(`Error Reschedule appointment: ${error.message}`);
+      }
+    } else {
+      alert("Please fill out the information completely.");
+    }
+  };
 
-        const time = selectedTime;
-        const patient = searchPatients;
-        const doctor = searchDoctors;
-
-        const newAppointment = {
+  const createAppointmentIdAndPut = async () => {
+    const dateObject = formatDate();
+    const time = selectedTime;
+    const appointment = searchAppointments[0];
+    const doctor = searchDoctors[0];
+    const branch = params.id.toLocaleUpperCase();
+    const oldAppointmentId = appointment.id;
+    const newAppointmentId = `APPT-${branch}-${dateObject.day}-${dateObject.month}-${dateObject.year}-${time}-${doctor.license}-${appointment.HN}`;
+    try {
+      await axios.put(
+        `http://localhost:2001/appointments/${oldAppointmentId}`,
+        {
+          id: `APPT-${branch}-${dateObject.day}-${dateObject.month}-${dateObject.year}-${time}-${doctor.license}-${appointment.HN}`,
           day: dateObject.day,
           month: dateObject.month,
           year: dateObject.year,
           time: time,
-          patientHN: patient[0].patientHN,
+          HN: appointment.HN,
+          license: doctor.license,
           status: "booked",
-        };
-        await axios.put(`http://localhost:3001/doctors/${searchPatients[0].license}`, {
-          ...doctor[0],
-          appointments: [...doctor[0].appointments, newAppointment],
-        });
-        const updatedDoctor = await getDoctors();
-        const displayAfterUpdate = findDoctors(updatedDoctor);
-        setSearchDoctors([...displayAfterUpdate]);
-        setshowButtonDoctor(true);
-        console.log(updatedDoctor);
-        alert("Appointment has been created");
-      } catch (error) {
-        alert(`Error creating appointment: ${error.message}`);
-      }
-    } else {
-      alert("Please fill out the information completely.");
+          branch: params.id.toLocaleUpperCase(),
+        }
+      );
+      alert("Appointment has been Reschedule");
+      return newAppointmentId;
+    } catch (error) {
+      alert("Appointment is a duplicate date");
     }
   };
 
@@ -206,7 +222,7 @@ function AppointmentReschule() {
               flex-direction: column;
               gap: 1rem;
             `}
-            onSubmit={handleSearchPatients}
+            onSubmit={handlesearchAppointments}
           >
             <FloatingLabel
               controlId="floatingInput"
@@ -234,56 +250,54 @@ function AppointmentReschule() {
             </Button>
           </Form>
 
-          {searchPatients.map((appointment) => {
+          {searchAppointments.map((appointment, index) => {
             return (
               <div
-                key={appointment.HN}
+                key={index}
                 css={css`
                   display: flex;
-                  flex-direction: row;
+                  flex-direction: column;
                   gap: 1rem;
                   border: solid gray 1px;
                   border-radius: 10px;
                   justify-content: center;
                   align-items: center;
                   padding: 1rem;
-                  width: fit-content;
+                  width: 100%;
                 `}
               >
                 <div
                   css={css`
                     display: flex;
                     flex-direction: column;
+                    width: 100%;
                     gap: 1rem;
                   `}
                 >
-                  <FloatingLabel label="HN">
+                  <FloatingLabel label="Appointment ID">
                     <Form.Control
                       type="text"
-                      value={appointment.patientHN}
+                      value={appointment.id}
                       disabled
                       readOnly
                     />
                   </FloatingLabel>
-                  <FloatingLabel label="Doctor name">
+
+                  <FloatingLabel label="date & time">
                     <Form.Control
                       type="text"
-                      value={appointment.name}
-                      disabled
-                      readOnly
-                    />
-                  </FloatingLabel>
-                  <FloatingLabel label="date">
-                    <Form.Control
-                      type="text"
-                      value={`${appointment.day}/${appointment.month}/${appointment.year}`}
+                      value={`Date : ${appointment.day}/${appointment.month}/${
+                        appointment.year
+                      }   Time : ${appointment.time}.00-${String(
+                        Number(appointment.time) + 1
+                      )}.00`}
                       disabled
                       readOnly
                     />
                   </FloatingLabel>
                   <Button
                     onClick={() => {
-                      handleConfirmPatient(appointment.patientHN);
+                      handleConfirmPatient(appointment.id);
                     }}
                     css={css`
                       display: ${showButtonPatient ? "block" : "none"};
@@ -344,8 +358,9 @@ function AppointmentReschule() {
               <Form.Select
                 onChange={(e) => {
                   setSelectedTime(e.target.value);
+                  console.log(selectedTime);
                 }}
-                value={selectedTime}
+                defaultValuevalue={selectedTime}
               >
                 <option value="09">9.00-10.00</option>
                 <option value="10">10.00-11.00</option>
@@ -431,14 +446,33 @@ function AppointmentReschule() {
           })}
         </div>
       </div>
-      <Button
-        onClick={handleReschedule}
+      <div
         css={css`
-          width: 100%;
+          display: flex;
         `}
       >
-        Reschedule
-      </Button>
+        <Button
+          onClick={handleReschedule}
+          css={css`
+            width: 50%;
+          `}
+        >
+          Reschedule
+        </Button>
+        <FloatingLabel
+          label="New Appointment ID"
+          css={css`
+            width: 50%;
+          `}
+        >
+          <Form.Control
+            type="text"
+            value={newAppointmentId}
+            disabled
+            readOnly
+          />
+        </FloatingLabel>
+      </div>
     </>
   );
 }

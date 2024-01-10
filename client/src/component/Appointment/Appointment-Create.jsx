@@ -12,21 +12,24 @@ import "react-datepicker/dist/react-datepicker.css";
 import "react-time-picker/dist/TimePicker.css";
 import format from "date-fns/format";
 
-function AppointmentCreate() {
+function AppointmentCreate({ searchPatients, setSearchPatients }) {
   const [inputPatientHN, setInputPatientHN] = useState("");
   const [inputPatientName, setInputPatientName] = useState("");
   const [inputPatientCardID, setInputPatientCardID] = useState("");
-  const [searchPatients, setSearchPatients] = useState([]);
   const [showButtonPatient, setshowButtonPatient] = useState(false);
   const [showButtonDoctor, setshowButtonDoctor] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedTime, setSelectedTime] = useState("09");
   const [searchDoctors, setSearchDoctors] = useState([]);
   const [newAppointmentId, setNewAppointmentId] = useState("");
 
   const params = useParams();
 
   //patients section
+
+  const setPatientOtherComponent = () => {
+    setSearchPatients();
+  };
 
   const getPatients = async () => {
     try {
@@ -56,6 +59,7 @@ function AppointmentCreate() {
       setshowButtonPatient(true);
     } else {
       alert("Patient not found");
+      setSearchPatients([...requestedData]);
     }
   };
 
@@ -89,7 +93,7 @@ function AppointmentCreate() {
   const getAppointments = async () => {
     try {
       const response = await axios.get("http://localhost:2001/appointments/");
-      console.log(response.data.data);
+
       return response.data.data;
     } catch {
       alert("fetching appointment error");
@@ -110,13 +114,8 @@ function AppointmentCreate() {
   const findAvailableDoctors = async (appointments) => {
     const dateObject = formatDate();
     const time = selectedTime;
-    // Filter appointments by branch
-    const searchResouses = appointments.filter(
-      (appointment) => appointment.branch === params.id.toLocaleUpperCase()
-    );
-    console.log(searchResouses);
-    // Filter appointments by date and time, and extract doctor licenses
-    const unAvailableDoctors = searchResouses
+
+    const unAvailableDoctors = appointments
       .filter(
         (appointment) =>
           appointment.year === dateObject.year &&
@@ -133,8 +132,10 @@ function AppointmentCreate() {
     const availableDoctors = doctors.filter(
       (doctor) => !unAvailableDoctors.includes(doctor.license)
     );
-
-    return availableDoctors;
+    const availibleDoctorsInSpecificBranch = availableDoctors.filter(
+      (doctor) => doctor.branch === params.id.toLocaleUpperCase()
+    );
+    return availibleDoctorsInSpecificBranch;
   };
 
   const handleSearchDoctor = async (event) => {
@@ -147,6 +148,7 @@ function AppointmentCreate() {
       setshowButtonDoctor(true);
     } else {
       alert("No available doctors found.");
+      setSearchDoctors([...availableDoctors]);
     }
   };
 
@@ -279,60 +281,62 @@ function AppointmentCreate() {
             </Button>
           </Form>
 
-          {searchPatients.map((patient) => {
-            return (
-              <div
-                key={patient.HN}
-                css={css`
-                  display: flex;
-                  flex-direction: row;
-                  gap: 1rem;
-                  border: solid gray 1px;
-                  border-radius: 10px;
-                  justify-content: center;
-                  align-items: center;
-                  padding: 1rem;
-                  width: fit-content;
-                `}
-              >
-                <img src={patient.picture}></img>
+          {searchPatients &&
+            Array.isArray(searchPatients) &&
+            searchPatients.map((patient) => {
+              return (
                 <div
+                  key={patient.HN}
                   css={css`
                     display: flex;
-                    flex-direction: column;
+                    flex-direction: row;
                     gap: 1rem;
+                    border: solid gray 1px;
+                    border-radius: 10px;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 1rem;
+                    width: fit-content;
                   `}
                 >
-                  <FloatingLabel label="Patient Name">
-                    <Form.Control
-                      type="text"
-                      value={`${patient.firstName} ${patient.surName}`}
-                      disabled
-                      readOnly
-                    />
-                  </FloatingLabel>
-                  <FloatingLabel label="HN">
-                    <Form.Control
-                      type="text"
-                      value={patient.HN}
-                      disabled
-                      readOnly
-                    />
-                  </FloatingLabel>
-                  <Button
-                    onClick={() => {
-                      handleConfirmPatient(patient.HN);
-                    }}
+                  <img src={patient.picture}></img>
+                  <div
                     css={css`
-                      display: ${showButtonPatient ? "block" : "none"};
+                      display: flex;
+                      flex-direction: column;
+                      gap: 1rem;
                     `}
                   >
-                    Confirm Patient
-                  </Button>
+                    <FloatingLabel label="Patient Name">
+                      <Form.Control
+                        type="text"
+                        value={`${patient.firstName} ${patient.surName}`}
+                        disabled
+                        readOnly
+                      />
+                    </FloatingLabel>
+                    <FloatingLabel label="HN">
+                      <Form.Control
+                        type="text"
+                        value={patient.HN}
+                        disabled
+                        readOnly
+                      />
+                    </FloatingLabel>
+                    <Button
+                      onClick={() => {
+                        handleConfirmPatient(patient.HN);
+                      }}
+                      css={css`
+                        display: ${showButtonPatient ? "block" : "none"};
+                      `}
+                    >
+                      Confirm Patient
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
         {/* doctor section */}
         <div
@@ -383,7 +387,7 @@ function AppointmentCreate() {
                 onChange={(e) => {
                   setSelectedTime(e.target.value);
                 }}
-                value={selectedTime}
+                defaultValueValue={selectedTime}
               >
                 <option value="09">9.00-10.00</option>
                 <option value="10">10.00-11.00</option>

@@ -3,7 +3,7 @@ import Tabs from "react-bootstrap/Tabs";
 import AppointmentCreate from "./Appointment-Create";
 import AppointmentReschule from "./Appointment-Reschedule";
 
-function Appointment() {
+function Appointment(props) {
   return (
     <Tabs
       defaultActiveKey="Create"
@@ -11,12 +11,12 @@ function Appointment() {
       className="mb-3"
     >
       <Tab eventKey="Create" title="Create">
-        <AppointmentCreate />
+        <AppointmentCreate {...props} />
       </Tab>
       <Tab eventKey="Reschedule" title="Reschedule">
         <AppointmentReschule />
       </Tab>
-      <Tab eventKey="Cancle" title="Cancle">
+      <Tab eventKey="Cancel" title="Cancel">
         Tab content for Contact
       </Tab>
     </Tabs>

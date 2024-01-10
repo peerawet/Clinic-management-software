@@ -1,12 +1,16 @@
 import Card from "react-bootstrap/Card";
-import { features } from "../data/features.jsx";
+import { features } from "../data/featureData.js";
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react";
 import Tab from "react-bootstrap/Tab";
 import Tabs from "react-bootstrap/Tabs";
 import Accordion from "react-bootstrap/Accordion";
+import { useState } from "react";
+import DynamicComponent from "./DynamicComponent.jsx";
 
 function FeatureList() {
+  const [activeTab, setActiveTab] = useState("Check in");
+  const [searchPatients, setSearchPatients] = useState([]);
   return (
     <div>
       {/* render for desktop */}
@@ -22,11 +26,13 @@ function FeatureList() {
           defaultActiveKey="Check in"
           id="uncontrolled-tab-example"
           className="mb-3"
+          activeKey={activeTab}
+          onSelect={(tab) => setActiveTab(tab)}
         >
-          {features.map((feature, index) => {
+          {features.map((feature) => {
             return (
               <Tab
-                key={index}
+                key={feature.name}
                 eventKey={feature.name}
                 title={
                   <Card
@@ -49,7 +55,13 @@ function FeatureList() {
                   </Card>
                 }
               >
-                {feature.component}
+                <DynamicComponent
+                  type={feature.componentType}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  searchPatients={searchPatients}
+                  setSearchPatients={setSearchPatients}
+                />
               </Tab>
             );
           })}
@@ -89,7 +101,9 @@ function FeatureList() {
                     </Card.Body>
                   </Card>
                 </Accordion.Header>
-                <Accordion.Body>{feature.component}</Accordion.Body>
+                <Accordion.Body>
+                  <DynamicComponent type={feature.componentType} />
+                </Accordion.Body>
               </Accordion.Item>
             </Accordion>
           );
