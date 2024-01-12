@@ -1,7 +1,7 @@
 import Tab from "react-bootstrap/Tab";
 import Tabs from "react-bootstrap/Tabs";
-import AppointmentCreate from "./Appointment-Create";
-import AppointmentReschule from "./Appointment-Reschedule";
+import AppointmentCreate from "./Appointment-Create/Appointment-Create";
+import AppointmentReschule from "./Appointment-Reschedule/Appointment-Reschedule";
 
 function Appointment(props) {
   return (

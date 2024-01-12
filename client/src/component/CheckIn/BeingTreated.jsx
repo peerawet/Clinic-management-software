@@ -7,17 +7,13 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Accordion from "react-bootstrap/Accordion";
 
-function BeingTreated({ setActiveTab, setSearchPatients, activeTab }) {
-  const [searchBox, setSearchBox] = useState("");
-  const [listAppointments, setListAppointments] = useState([]);
-  const [beingTreatedRender, setBeingTreatedRender] = useState([]);
-  const [isComfirmpatient, setIsComfirmpatient] = useState(false);
-  let checkInDate = new Date();
-
-  useEffect(() => {
-    fetchAppointmentsToday();
-  }, [activeTab]);
-
+function BeingTreated({
+  activeTab,
+  beingTreatedRender,
+  setBeingTreatedRender,
+  setSearchPatients,
+  setActiveTab,
+}) {
   useEffect(() => {
     fetchBeingtreatedToday();
   }, [activeTab]);
@@ -28,95 +24,6 @@ function BeingTreated({ setActiveTab, setSearchPatients, activeTab }) {
     );
     console.log(beingTreatedToday);
     setBeingTreatedRender(beingTreatedToday.data.data);
-  };
-
-  const getAppointments = async () => {
-    try {
-      const response = await axios.get("http://localhost:2001/appointments");
-      const appintments = response.data.data;
-
-      return appintments;
-    } catch (error) {
-      alert("Fetching appintments error");
-    }
-  };
-
-  const fetchAppointmentsToday = async () => {
-    const appointments = await getAppointments();
-    const appointmentsToday = findAppointmentsToday(appointments);
-    const appointmentsTodayWithPatientInfo = await Promise.all(
-      appointmentsToday.map(async (appointment) => {
-        const response = await axios.get(
-          `http://localhost:2001/patients/${appointment.HN}`
-        );
-        const patient = response.data.data;
-        return {
-          ...appointment,
-          patientInfo: patient,
-        };
-      })
-    );
-    const appointmentsTodayWithPatientAndDoctorInfo = await Promise.all(
-      appointmentsTodayWithPatientInfo.map(async (appointment) => {
-        const response = await axios.get(
-          `http://localhost:2001/doctors/${appointment.license}`
-        );
-        const doctor = response.data.data;
-        return {
-          ...appointment,
-          doctorInfo: doctor,
-        };
-      })
-    );
-    setListAppointments(appointmentsTodayWithPatientAndDoctorInfo);
-  };
-
-  function getCurrentDate() {
-    var currentDate = new Date();
-    var day = currentDate.getDate();
-    var month = currentDate.getMonth() + 1;
-    var year = currentDate.getFullYear();
-    var formattedDay = day < 10 ? "0" + day : day.toString();
-    var formattedMonth = month < 10 ? "0" + month : month.toString();
-    var formattedDate = {
-      day: formattedDay,
-      month: formattedMonth,
-      year: year.toString(),
-    };
-    return formattedDate;
-  }
-
-  const findAppointmentsToday = (appointments) => {
-    const currentDate = getCurrentDate();
-    const resultFilter = appointments.filter((appointment) => {
-      return (
-        appointment.status === "booked" &&
-        appointment.day === currentDate.day &&
-        appointment.month === currentDate.month &&
-        appointment.year === currentDate.year
-      );
-    });
-
-    return resultFilter;
-  };
-
-  const handleCheckIn = async (appointment) => {
-    await axios.post("http://localhost:2001/beingtreated", {
-      ...appointment,
-      status: "being treated",
-    });
-
-    const render = await axios.get("http://localhost:2001/beingtreated");
-    const appointmentWithoutPatientAndDoctor = { ...appointment };
-    delete appointmentWithoutPatientAndDoctor.patientInfo;
-    delete appointmentWithoutPatientAndDoctor.doctorInfo;
-    await axios.put(`http://localhost:2001/appointments/${appointment.id}`, {
-      ...appointmentWithoutPatientAndDoctor,
-      status: "being treated",
-    });
-    setBeingTreatedRender(render.data.data);
-
-    await fetchAppointmentsToday();
   };
 
   const handleCheckOut = async (id) => {
@@ -138,24 +45,11 @@ function BeingTreated({ setActiveTab, setSearchPatients, activeTab }) {
   const handleAppointmentAndCheckOut = async (HN, id) => {
     handleCheckOut(id);
     setActiveTab("Appointment");
-    const patientToAppointment = await getPatientById(HN);
-    console.log(patientToAppointment);
+    const patientToAppointment = await axios.get(
+      `http://localhost:2001/patients/${HN}`
+    );
     const patientToAppointmentArray = [{ ...patientToAppointment.data.data }];
     setSearchPatients(patientToAppointmentArray);
-  };
-
-  const handleSearch = (e) => {
-    const searchText = e.target.value;
-    setSearchBox(searchText);
-    const filteredAppointments = listAppointments.filter(
-      (appointment) =>
-        appointment.id.includes(searchText) ||
-        appointment.patientInfo.firstName.includes(searchText) ||
-        appointment.patientInfo.surName.includes(searchText) ||
-        appointment.time.includes(searchText) ||
-        appointment.doctorInfo.name.includes(searchText)
-    );
-    setListAppointments(filteredAppointments);
   };
 
   return (
