@@ -5,22 +5,34 @@ import { appointmentsRouter } from "./routers/appointmentsRouter.js";
 import { patientsRouter } from "./routers/patientsRouter.js";
 import { beingTreatedRouter } from "./routers/beingTreatedRouter.js";
 import { doctorsRouter } from "./routers/doctorsRouter.js";
+import { client } from "./utils/db.js";
 
-const app = express();
-const port = 2001;
+async function init() {
+  const app = express();
+  const port = 2001;
 
-app.use(cors());
-app.use(bodyParser.json());
+  try {
+    await client.connect();
+    console.log("Connected to the database successfully");
+  } catch (error) {
+    console.error("Unable to connect to the database:", error);
+  }
 
-app.use("/appointments", appointmentsRouter);
-app.use("/patients", patientsRouter);
-app.use("/beingTreated", beingTreatedRouter);
-app.use("/doctors", doctorsRouter);
+  app.use(cors());
+  app.use(bodyParser.json());
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+  app.use("/appointments", appointmentsRouter);
+  app.use("/patients", patientsRouter);
+  app.use("/beingTreated", beingTreatedRouter);
+  app.use("/doctors", doctorsRouter);
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+  app.get("/", (req, res) => {
+    res.send("Hello World!");
+  });
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
+
+init();

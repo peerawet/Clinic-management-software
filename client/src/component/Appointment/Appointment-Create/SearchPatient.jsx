@@ -16,38 +16,24 @@ function SearchPatient({
   setShowButtonPatient,
 }) {
   const [inputPatientHN, setInputPatientHN] = useState("");
-  const [inputPatientName, setInputPatientName] = useState("");
-  const [inputPatientCardID, setInputPatientCardID] = useState("");
-
-  const findPatients = (patients) => {
-    const resultFilter = patients.filter(
-      (patient) =>
-        patient.HN === inputPatientHN ||
-        patient.firstName === inputPatientName ||
-        patient.idCard === inputPatientCardID
-    );
-    return resultFilter;
-  };
 
   const handleSearchPatients = async (event) => {
     event.preventDefault();
-    const response = await axios.get("http://localhost:2001/patients");
-    const patients = response.data.data;
-    const requestedData = findPatients(patients);
-    if (requestedData.length > 0) {
-      setSearchPatients(requestedData);
+    const patientId = inputPatientHN;
+    const foundPatient = await axios.get(
+      `http://localhost:2001/patients/${patientId}`
+    );
+    console.log(`http://localhost:2001/patients/${patientId}`);
+    if (foundPatient) {
+      setSearchPatients([foundPatient.data.data]);
       setShowButtonPatient(true);
     } else {
       alert("Patient not found");
-      setSearchPatients([...requestedData]);
+      setSearchPatients([foundPatient.data.data]);
     }
   };
 
-  const handleConfirmPatient = (confirmHN) => {
-    const result = searchPatients.filter((patient) => {
-      return patient.HN === confirmHN;
-    });
-    setSearchPatients([...result]);
+  const handleConfirmPatient = (id) => {
     setShowButtonPatient(false);
   };
 
@@ -87,32 +73,7 @@ function SearchPatient({
             value={inputPatientHN}
           />
         </FloatingLabel>
-        <FloatingLabel
-          css={css`
-            flex: 2;
-          `}
-          label="Patient name"
-        >
-          <Form.Control
-            type="text"
-            onChange={(e) => {
-              setInputPatientName(e.target.value);
-            }}
-            value={inputPatientName}
-          />
-        </FloatingLabel>
-        <FloatingLabel
-          css={css`
-            flex: 2;
-          `}
-          label="Patient ID Card"
-          onChange={(e) => {
-            setInputPatientCardID(e.target.value);
-          }}
-          value={inputPatientCardID}
-        >
-          <Form.Control type="text" />
-        </FloatingLabel>
+
         <Button
           css={css`
             flex: 1;
@@ -126,7 +87,7 @@ function SearchPatient({
       {searchPatients ? (
         searchPatients.map((patient) => (
           <div
-            key={patient.HN}
+            key={patient._id}
             css={css`
               display: flex;
               flex-direction: row;
@@ -150,7 +111,7 @@ function SearchPatient({
               <FloatingLabel label="Patient Name">
                 <Form.Control
                   type="text"
-                  value={`${patient.firstName} ${patient.surName}`}
+                  value={patient.name}
                   disabled
                   readOnly
                 />
@@ -158,14 +119,14 @@ function SearchPatient({
               <FloatingLabel label="HN">
                 <Form.Control
                   type="text"
-                  value={patient.HN}
+                  value={patient._id}
                   disabled
                   readOnly
                 />
               </FloatingLabel>
               <Button
                 onClick={() => {
-                  handleConfirmPatient(patient.HN);
+                  handleConfirmPatient(patient._id);
                 }}
                 css={css`
                   display: ${showButtonPatient ? "block" : "none"};

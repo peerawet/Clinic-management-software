@@ -4,98 +4,33 @@ import { Button } from "react-bootstrap";
 import { css } from "@emotion/react";
 /** @jsxImportSource @emotion/react */
 import axios from "axios";
-import { useEffect } from "react";
 import Accordion from "react-bootstrap/Accordion";
 import Treatment from "./Treatment";
+import { format } from "date-fns";
 
 function ConfirmAppointments({
-  activeTab,
-  setBeingTreatedRender,
   isComfirmpatient,
   listAppointments,
-  setListAppointments,
+  fetchAppointmentsToday,
+  fetchBeingTreated,
 }) {
-  useEffect(() => {
-    fetchAppointmentsToday();
-  }, [activeTab]);
+  const handleCheckIn = async (appointment) => {
+    delete appointment.doctorInfo;
+    delete appointment.patientInfo;
 
-  const fetchAppointmentsToday = async () => {
-    const response = await axios.get("http://localhost:2001/appointments");
-    const appointments = response.data.data;
-    const appointmentsToday = findAppointmentsToday(appointments);
-    const appointmentsTodayWithPatientInfo = await Promise.all(
-      appointmentsToday.map(async (appointment) => {
-        const response = await axios.get(
-          `http://localhost:2001/patients/${appointment.HN}`
-        );
-        const patient = response.data.data;
-        return {
-          ...appointment,
-          patientInfo: patient,
-        };
-      })
-    );
-    const appointmentsTodayWithPatientAndDoctorInfo = await Promise.all(
-      appointmentsTodayWithPatientInfo.map(async (appointment) => {
-        const response = await axios.get(
-          `http://localhost:2001/doctors/${appointment.license}`
-        );
-        const doctor = response.data.data;
-        return {
-          ...appointment,
-          doctorInfo: doctor,
-        };
-      })
-    );
-    setListAppointments(appointmentsTodayWithPatientAndDoctorInfo);
-  };
-
-  function getCurrentDate() {
-    var currentDate = new Date();
-    var day = currentDate.getDate();
-    var month = currentDate.getMonth() + 1;
-    var year = currentDate.getFullYear();
-    var formattedDay = day < 10 ? "0" + day : day.toString();
-    var formattedMonth = month < 10 ? "0" + month : month.toString();
-    var formattedDate = {
-      day: formattedDay,
-      month: formattedMonth,
-      year: year.toString(),
-    };
-    return formattedDate;
-  }
-
-  const findAppointmentsToday = (appointments) => {
-    const currentDate = getCurrentDate();
-    const resultFilter = appointments.filter((appointment) => {
-      return (
-        appointment.status === "booked" &&
-        appointment.day === currentDate.day &&
-        appointment.month === currentDate.month &&
-        appointment.year === currentDate.year
-      );
+    await axios.put(`http://localhost:2001/appointments/${appointment._id}`, {
+      ...appointment,
+      status: "being treated",
+      checkIn: new Date(),
     });
 
-    return resultFilter;
-  };
-
-  const handleCheckIn = async (appointment) => {
     await axios.post("http://localhost:2001/beingtreated", {
       ...appointment,
       status: "being treated",
     });
 
-    const render = await axios.get("http://localhost:2001/beingtreated");
-    const appointmentWithoutPatientAndDoctor = { ...appointment };
-    delete appointmentWithoutPatientAndDoctor.patientInfo;
-    delete appointmentWithoutPatientAndDoctor.doctorInfo;
-    await axios.put(`http://localhost:2001/appointments/${appointment.id}`, {
-      ...appointmentWithoutPatientAndDoctor,
-      status: "being treated",
-    });
-    setBeingTreatedRender(render.data.data);
-
     await fetchAppointmentsToday();
+    await fetchBeingTreated();
   };
 
   return (
@@ -127,7 +62,7 @@ function ConfirmAppointments({
         >
           <Accordion>
             <Accordion.Item eventKey="0">
-              <Accordion.Header>{`Patient name : ${appointment.patientInfo.firstName} ${appointment.patientInfo.surName}`}</Accordion.Header>
+              <Accordion.Header>{`Patient name : ${appointment.patientInfo.name}`}</Accordion.Header>
               <Accordion.Body>
                 <div
                   css={css`
@@ -152,7 +87,7 @@ function ConfirmAppointments({
                     <FloatingLabel label="HN">
                       <Form.Control
                         type="text"
-                        value={appointment.patientInfo.HN}
+                        value={appointment.patientInfo._id}
                         disabled
                         readOnly
                       />
@@ -161,15 +96,7 @@ function ConfirmAppointments({
                     <FloatingLabel label="Patient name">
                       <Form.Control
                         type="text"
-                        value={`${appointment.patientInfo.firstName} ${appointment.patientInfo.surName}`}
-                        disabled
-                        readOnly
-                      />
-                    </FloatingLabel>
-                    <FloatingLabel label="Course remaining">
-                      <Form.Control
-                        type="text"
-                        value={appointment.patientInfo.courseRemaining}
+                        value={`${appointment.patientInfo.name}`}
                         disabled
                         readOnly
                       />
@@ -214,7 +141,7 @@ function ConfirmAppointments({
                     <FloatingLabel label="License">
                       <Form.Control
                         type="text"
-                        value={appointment.doctorInfo.license}
+                        value={appointment.doctorInfo._id}
                         disabled
                         readOnly
                       />
@@ -240,7 +167,7 @@ function ConfirmAppointments({
           >
             <Form.Control
               type="text"
-              value={appointment.id}
+              value={appointment._id}
               disabled
               readOnly
             />
@@ -259,7 +186,7 @@ function ConfirmAppointments({
             >
               <Form.Control
                 type="text"
-                value={`Date : ${appointment.day}-${appointment.month}-${appointment.year}`}
+                value={format(appointment.start, "MMMM d, yyyy")}
                 disabled
                 readOnly
               />
@@ -272,9 +199,10 @@ function ConfirmAppointments({
             >
               <Form.Control
                 type="text"
-                value={`time : ${appointment.time}.00-${String(
-                  Number(appointment.time) + 1
-                )}.00`}
+                value={`${format(appointment.start, "hh.mm a")} - ${format(
+                  appointment.end,
+                  "hh.mm a"
+                )}`}
                 disabled
                 readOnly
               />

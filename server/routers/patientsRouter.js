@@ -1,80 +1,85 @@
 import { Router } from "express";
-import patients from "../data/patients.js";
+import { db } from "../utils/db.js";
 
 export const patientsRouter = Router();
-// Patients endpoints
-patientsRouter.get("/", (req, res) => {
-  res.json({
-    data: patients,
-  });
+
+patientsRouter.get("/", async (req, res) => {
+  const collection = db.collection("patients");
+  const result = await collection.find({}).toArray();
+  return res.json({ data: result });
 });
 
-patientsRouter.get("/:hn", (req, res) => {
-  const patientHN = req.params.hn;
+patientsRouter.get("/:_id", async (req, res) => {
+  const collection = db.collection("patients");
+  const patient = await collection.findOne({ _id: req.params._id });
 
-  const foundPatient = patients.find((patient) => patient.HN === patientHN);
-
-  if (!foundPatient) {
-    res.status(404).json({
-      message: `Patient with HN ${patientHN} not found`,
-    });
-    return; // Return early to avoid further processing
+  if (patient) {
+    res.json({ data: patient });
+  } else {
+    res.status(404).json({ error: "Patient not found" });
   }
-
-  res.json({
-    data: foundPatient,
-  });
 });
 
-patientsRouter.post("/", (req, res) => {
-  patients.push(req.body);
-  res.json({
-    message: "Patient has been created.",
-  });
-});
+const generateId = async (branch) => {
+  try {
+    const patientsCollection = db.collection("patients");
 
-patientsRouter.put("/:hn", (req, res) => {
-  const updatedPatient = req.body;
-  const patientHN = req.params.hn;
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // Month is zero-based, so add 1
 
-  const hasFound = patients.find((patient) => patient.HN === patientHN);
+    // Find the latest document for the specific branch in the current year and month
+    const latestPatient = await patientsCollection.findOne(
+      {
+        branch: branch,
+        _id: {
+          $regex: `${branch}${currentYear.toString().slice(2)}${currentMonth
+            .toString()
+            .padStart(2, "0")}`,
+        },
+      },
+      { sort: { _id: -1 } }
+    );
 
-  if (!hasFound) {
-    res.status(404).json({
-      message: `Patient with HN ${patientHN} not found`,
-    });
+    // Extract the latest run number and increment it
+    let latestRunNumber = 0;
+    if (latestPatient) {
+      const runNumber = parseInt(latestPatient._id.slice(-3)); // Extract the last 3 digits
+      latestRunNumber = runNumber;
+    }
+
+    // Generate the new ID based on your logic and include the branch, year, and month
+    const newRunNumber = latestRunNumber + 1;
+    const newId = `${branch}${currentYear.toString().slice(2)}${currentMonth
+      .toString()
+      .padStart(2, "0")}${newRunNumber.toString().padStart(3, "0")}`;
+
+    return newId;
+  } catch (error) {
+    console.error("Error generating ID:", error);
+    throw error;
   }
+};
 
-  const patientIndex = patients.findIndex((patient) => {
-    return patient.HN === patientHN;
-  });
+patientsRouter.post("/:branch", async (req, res) => {
+  const branch = req.params.branch.toUpperCase();
 
-  patients[patientIndex] = {
-    HN: patientHN,
-    ...updatedPatient,
-  };
-
-  res.json({
-    message: `Patient with HN ${patientHN} has been updated.`,
-  });
-});
-
-patientsRouter.delete("/:hn", (req, res) => {
-  const patientHN = req.params.hn;
-
-  const hasFound = patients.find((patient) => patient.HN === patientHN);
-
-  if (!hasFound) {
-    res.status(404).json({
-      message: `Patient with HN ${patientHN} not found`,
+  try {
+    const newId = await generateId(branch);
+    const collection = db.collection("patients");
+    await collection.insertOne({ ...req.body, _id: newId, branch: branch });
+    res.json({
+      message: "Patient has been created.",
+      data: newId,
     });
+  } catch (error) {
+    console.error("Error creating patient:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
-
-  patients = patients.filter((patient) => {
-    return patientHN !== patient.HN;
-  });
-
-  res.json({
-    message: `Patient with HN ${patientHN} has been deleted.`,
-  });
 });
+
+patientsRouter.put("/:hn", (req, res) => {});
+
+patientsRouter.delete("/:hn", (req, res) => {});

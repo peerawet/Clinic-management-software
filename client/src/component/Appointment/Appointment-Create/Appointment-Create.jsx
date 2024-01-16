@@ -7,28 +7,23 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import { useState } from "react";
 import React from "react";
-import DatePicker from "react-datepicker";
+
 import "react-datepicker/dist/react-datepicker.css";
 import "react-time-picker/dist/TimePicker.css";
-import format from "date-fns/format";
 import SearchPatient from "./SearchPatient";
 import SearchDoctor from "./SearchDoctor";
 
 function AppointmentCreate({ searchPatients, setSearchPatients }) {
+  const initialDate = new Date();
+  initialDate.setHours(9, 0, 0, 0);
+  const [selectedStartDate, setSelectedStartDate] = useState(initialDate);
+  const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [showButtonPatient, setShowButtonPatient] = useState(false);
   const [showButtonDoctor, setShowButtonDoctor] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState("09");
   const [searchDoctors, setSearchDoctors] = useState([]);
   const [newAppointmentId, setNewAppointmentId] = useState("");
 
   const params = useParams();
-
-  //patients section
-
-  //doctors section
-
-  //create appointment section
 
   const handleCreateAppointment = async () => {
     if (
@@ -38,48 +33,32 @@ function AppointmentCreate({ searchPatients, setSearchPatients }) {
       showButtonPatient === false
     ) {
       try {
-        const appointmentId = await createAppointmentIdAndPost();
+        const doctor = searchDoctors[0];
+        const patient = searchPatients[0];
+        const startDate = selectedStartDate;
+        const endDate = selectedEndDate;
+        const response = await axios.post(
+          `http://localhost:2001/appointments/${params.id}/${doctor._id}`,
+          {
+            start: startDate,
+            end: endDate,
+            HN: patient._id,
+            license: doctor._id,
+            status: "booked",
+            branch: params.id.toUpperCase(),
+          }
+        );
+        const appointmentId = response.data.data;
         setNewAppointmentId(appointmentId);
-
         alert("Appointment has been created");
+        setSearchDoctors([]);
+        setSearchPatients([]);
       } catch (error) {
         alert(`Error creating appointment: ${error.message}`);
       }
     } else {
       alert("Please fill out the information completely.");
     }
-  };
-
-  const formatDate = () => {
-    const date = format(selectedDate, "yyyy-MM-dd");
-    const dateArray = date.split("-");
-    const dateObject = {
-      year: dateArray[0] || "",
-      month: dateArray[1] || "",
-      day: dateArray[2] || "",
-    };
-    return dateObject;
-  };
-
-  const createAppointmentIdAndPost = async () => {
-    const dateObject = formatDate();
-    const time = selectedTime;
-    const patient = searchPatients[0];
-    const doctor = searchDoctors[0];
-    const branch = params.id.toLocaleUpperCase();
-    const appointmentId = `APPT-${branch}-${dateObject.day}-${dateObject.month}-${dateObject.year}-${time}-${doctor.license}-${patient.HN}`;
-    await axios.post("http://localhost:2001/appointments/", {
-      id: `APPT-${branch}-${dateObject.day}-${dateObject.month}-${dateObject.year}-${time}-${doctor.license}-${patient.HN}`,
-      day: dateObject.day,
-      month: dateObject.month,
-      year: dateObject.year,
-      time: time,
-      HN: patient.HN,
-      license: doctor.license,
-      status: "booked",
-      branch: params.id.toLocaleUpperCase(),
-    });
-    return appointmentId;
   };
 
   return (
@@ -105,13 +84,13 @@ function AppointmentCreate({ searchPatients, setSearchPatients }) {
         />
         <SearchDoctor
           setShowButtonDoctor={setShowButtonDoctor}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          setSelectedTime={setSelectedTime}
+          selectedStartDate={selectedStartDate}
+          setSelectedStartDate={setSelectedStartDate}
           setSearchDoctors={setSearchDoctors}
-          selectedTime={selectedTime}
           searchDoctors={searchDoctors}
           showButtonDoctor={showButtonDoctor}
+          selectedEndDate={selectedEndDate}
+          setSelectedEndDate={setSelectedEndDate}
         />
       </div>
 

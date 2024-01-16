@@ -1,82 +1,78 @@
 import { Router } from "express";
-import doctors from "../data/doctors.js";
+import { db } from "../utils/db.js";
 
 export const doctorsRouter = Router();
 // Doctors endpoints
-doctorsRouter.get("/", (req, res) => {
-  res.json({
-    data: doctors,
-  });
+doctorsRouter.get("/", (req, res) => {});
+
+doctorsRouter.get("/:_id", async (req, res) => {
+  const collection = db.collection("doctors");
+  const doctor = await collection.findOne({ _id: req.params._id });
+
+  if (doctor) {
+    res.json({ data: doctor });
+  } else {
+    res.status(404).json({ error: "Patient not found" });
+  }
 });
 
-doctorsRouter.get("/:license", (req, res) => {
-  const doctorLicense = req.params.license;
+const findBookedDoctors = async (startTimeStamp, endTimeStamp, branch) => {
+  const appointmentsCollection = db.collection("appointments");
 
-  const foundDoctor = doctors.find(
-    (doctor) => doctor.license === doctorLicense
+  const startDateTime = new Date(Number(startTimeStamp));
+  const endDateTime = new Date(Number(endTimeStamp));
+
+  const bookedAppointments = await appointmentsCollection
+    .find({
+      branch: branch,
+      start: {
+        $gte: startDateTime,
+        $lt: endDateTime,
+      },
+    })
+    .toArray();
+
+  const bookedDoctors = bookedAppointments.map(
+    (appointment) => appointment.license
   );
 
-  if (!foundDoctor) {
-    res.status(404).json({
-      message: `Doctor with license ${doctorLicense} not found`,
-    });
-    return; // Return early to avoid further processing
+  return bookedDoctors;
+};
+
+doctorsRouter.get("/available/:branch", async (req, res) => {
+  try {
+    const branch = req.params.branch.toUpperCase();
+    const startTimeStamp = req.query.startTimeStamp;
+    const endTimeStamp = req.query.endTimeStamp;
+
+    if (!startTimeStamp || !endTimeStamp) {
+      return res.status(400).json({
+        error:
+          "Both startTimeStamp and endTimeStamp are required as query parameters.",
+      });
+    }
+
+    const bookedDoctors = await findBookedDoctors(
+      startTimeStamp,
+      endTimeStamp,
+      branch
+    );
+    const doctorsCollection = db.collection("doctors");
+    const allDoctors = await doctorsCollection.find({ branch }).toArray();
+
+    const availableDoctors = allDoctors.filter(
+      (doctor) => !bookedDoctors.includes(doctor._id)
+    );
+
+    res.json({ data: availableDoctors });
+  } catch (error) {
+    console.error("Error in doctorsRouter:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  res.json({
-    data: foundDoctor,
-  });
 });
 
-doctorsRouter.post("/", (req, res) => {
-  doctors.push(req.body);
-  res.json({
-    message: "Doctor has been added.",
-  });
-});
+doctorsRouter.post("/", (req, res) => {});
 
-doctorsRouter.put("/:license", (req, res) => {
-  const updatedDoctor = req.body;
-  const doctorLicense = req.params.license;
+doctorsRouter.put("/:license", (req, res) => {});
 
-  const hasFound = doctors.find((doctor) => doctor.license === doctorLicense);
-
-  if (!hasFound) {
-    res.status(404).json({
-      message: `Doctor with license ${doctorLicense} not found`,
-    });
-  }
-
-  const doctorIndex = doctors.findIndex((doctor) => {
-    return doctor.license === doctorLicense;
-  });
-
-  doctors[doctorIndex] = {
-    license: doctorLicense,
-    ...updatedDoctor,
-  };
-
-  res.json({
-    message: `Doctor with license ${doctorLicense} has been updated.`,
-  });
-});
-
-doctorsRouter.delete("/:license", (req, res) => {
-  const doctorLicense = req.params.license;
-
-  const hasFound = doctors.find((doctor) => doctor.license === doctorLicense);
-
-  if (!hasFound) {
-    res.status(404).json({
-      message: `Doctor with license ${doctorLicense} not found`,
-    });
-  }
-
-  doctors = doctors.filter((doctor) => {
-    return doctorLicense !== doctor.license;
-  });
-
-  res.json({
-    message: `Doctor with license ${doctorLicense} has been deleted.`,
-  });
-});
+doctorsRouter.delete("/:license", (req, res) => {});

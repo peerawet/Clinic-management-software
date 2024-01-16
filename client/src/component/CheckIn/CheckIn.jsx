@@ -3,9 +3,10 @@ import Form from "react-bootstrap/Form";
 import { Button } from "react-bootstrap";
 import { css } from "@emotion/react";
 /** @jsxImportSource @emotion/react */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BeingTreated from "./BeingTreated";
 import ConfirmAppointments from "./ConfirmAppointments";
+import axios from "axios";
 
 function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
   const [searchBox, setSearchBox] = useState("");
@@ -13,6 +14,88 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
   const [beingTreatedRender, setBeingTreatedRender] = useState([]);
   const [isComfirmpatient, setIsComfirmpatient] = useState(false);
   let checkInDate = new Date();
+
+  useEffect(() => {
+    fetchAppointmentsToday();
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchBeingTreated();
+  }, [activeTab]);
+
+  const fetchAppointmentsToday = async () => {
+    const currentDate = new Date();
+    const todayTimeStamp = currentDate.getTime();
+    const response = await axios.get(
+      `http://localhost:2001/appointments/appointments-today/${todayTimeStamp}`
+    );
+
+    const appointmentsToday = response.data.data;
+    const appointmentsTodayWithPatientInfo = await Promise.all(
+      appointmentsToday.map(async (appointment) => {
+        const response = await axios.get(
+          `http://localhost:2001/patients/${appointment.HN}`
+        );
+        const patient = response.data.data;
+        return {
+          ...appointment,
+          patientInfo: patient,
+        };
+      })
+    );
+    const appointmentsTodayWithPatientAndDoctorInfo = await Promise.all(
+      appointmentsTodayWithPatientInfo.map(async (appointment) => {
+        const response = await axios.get(
+          `http://localhost:2001/doctors/${appointment.license}`
+        );
+        const doctor = response.data.data;
+        return {
+          ...appointment,
+          doctorInfo: doctor,
+        };
+      })
+    );
+    setListAppointments(appointmentsTodayWithPatientAndDoctorInfo);
+  };
+
+  const fetchBeingTreated = async () => {
+    try {
+      const response = await axios.get("http://localhost:2001/appointments/", {
+        params: {
+          status: "being treated",
+        },
+      });
+      const beingTreated = response.data.data;
+
+      const beingTreatedWithPatientInfo = await Promise.all(
+        beingTreated.map(async (appointment) => {
+          const response = await axios.get(
+            `http://localhost:2001/patients/${appointment.HN}`
+          );
+          const patient = response.data.data;
+          return {
+            ...appointment,
+            patientInfo: patient,
+          };
+        })
+      );
+      const beingTreatedWithPatientAndDoctorInfo = await Promise.all(
+        beingTreatedWithPatientInfo.map(async (appointment) => {
+          const response = await axios.get(
+            `http://localhost:2001/doctors/${appointment.license}`
+          );
+          const doctor = response.data.data;
+          return {
+            ...appointment,
+            doctorInfo: doctor,
+          };
+        })
+      );
+      setBeingTreatedRender(beingTreatedWithPatientAndDoctorInfo);
+    } catch (error) {
+      console.error("Error fetching being treated appointments:", error);
+    }
+  };
 
   const handleSearch = (e) => {
     const searchText = e.target.value;
@@ -86,18 +169,16 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
         `}
       >
         <ConfirmAppointments
-          activeTab={activeTab}
-          setBeingTreatedRender={setBeingTreatedRender}
           isComfirmpatient={isComfirmpatient}
           listAppointments={listAppointments}
-          setListAppointments={setListAppointments}
+          fetchAppointmentsToday={fetchAppointmentsToday}
+          fetchBeingTreated={fetchBeingTreated}
         />
         <BeingTreated
           beingTreatedRender={beingTreatedRender}
-          setBeingTreatedRender={setBeingTreatedRender}
-          activeTab={activeTab}
           setSearchPatients={setSearchPatients}
           setActiveTab={setActiveTab}
+          fetchBeingTreated={fetchBeingTreated}
         />
       </div>
     </div>

@@ -4,49 +4,36 @@ import { Button } from "react-bootstrap";
 import { css } from "@emotion/react";
 /** @jsxImportSource @emotion/react */
 import axios from "axios";
-import { useEffect, useState } from "react";
+
 import Accordion from "react-bootstrap/Accordion";
+import { format } from "date-fns";
 
 function BeingTreated({
-  activeTab,
   beingTreatedRender,
-  setBeingTreatedRender,
   setSearchPatients,
   setActiveTab,
+  fetchBeingTreated,
 }) {
-  useEffect(() => {
-    fetchBeingtreatedToday();
-  }, [activeTab]);
-
-  const fetchBeingtreatedToday = async () => {
-    const beingTreatedToday = await axios.get(
-      "http://localhost:2001/beingtreated"
+  const handleCheckOut = async (appointment) => {
+    const newAppointment = { ...appointment };
+    delete newAppointment.doctorInfo;
+    delete newAppointment.patientInfo;
+    await axios.put(
+      `http://localhost:2001/appointments/${newAppointment._id}`,
+      {
+        ...newAppointment,
+        status: "completed",
+        checkOut: new Date(),
+      }
     );
-    console.log(beingTreatedToday);
-    setBeingTreatedRender(beingTreatedToday.data.data);
+    fetchBeingTreated();
   };
 
-  const handleCheckOut = async (id) => {
-    const response = await axios.get(
-      `http://localhost:2001/appointments/${id}`
-    );
-    const appointment = response.data.data;
-    await axios.put(`http://localhost:2001/appointments/${id}`, {
-      ...appointment,
-      status: "completed",
-    });
-    await axios.delete(`http://localhost:2001/beingtreated/${id}`);
-    const updateBeingTreatedList = await axios.get(
-      "http://localhost:2001/beingtreated"
-    );
-    setBeingTreatedRender(updateBeingTreatedList.data.data);
-  };
-
-  const handleAppointmentAndCheckOut = async (HN, id) => {
-    handleCheckOut(id);
+  const handleAppointmentAndCheckOut = async (appointment) => {
+    handleCheckOut(appointment);
     setActiveTab("Appointment");
     const patientToAppointment = await axios.get(
-      `http://localhost:2001/patients/${HN}`
+      `http://localhost:2001/patients/${appointment.HN}`
     );
     const patientToAppointmentArray = [{ ...patientToAppointment.data.data }];
     setSearchPatients(patientToAppointmentArray);
@@ -80,8 +67,7 @@ function BeingTreated({
           <Accordion>
             <Accordion.Item eventKey="0">
               <Accordion.Header>
-                Patient name : {beingTreated.patientInfo.firstName}{" "}
-                {beingTreated.patientInfo.surName}
+                Patient name : {beingTreated.patientInfo.name}
               </Accordion.Header>
               <Accordion.Body>
                 <div
@@ -107,7 +93,7 @@ function BeingTreated({
                     <FloatingLabel label="HN">
                       <Form.Control
                         type="text"
-                        value={beingTreated.patientInfo.HN}
+                        value={beingTreated.patientInfo._id}
                         disabled
                         readOnly
                       />
@@ -115,15 +101,7 @@ function BeingTreated({
                     <FloatingLabel label="Patient name">
                       <Form.Control
                         type="text"
-                        value={`${beingTreated.patientInfo.firstName} ${beingTreated.patientInfo.surName}`}
-                        disabled
-                        readOnly
-                      />
-                    </FloatingLabel>
-                    <FloatingLabel label="Course remaining">
-                      <Form.Control
-                        type="text"
-                        value={beingTreated.patientInfo.courseRemaining}
+                        value={beingTreated.patientInfo.name}
                         disabled
                         readOnly
                       />
@@ -168,7 +146,7 @@ function BeingTreated({
                     <FloatingLabel label="License">
                       <Form.Control
                         type="text"
-                        value={beingTreated.doctorInfo.license}
+                        value={beingTreated.doctorInfo._id}
                         disabled
                         readOnly
                       />
@@ -201,7 +179,7 @@ function BeingTreated({
             >
               <Form.Control
                 type="text"
-                value={beingTreated.id}
+                value={beingTreated._id}
                 disabled
                 readOnly
               />
@@ -220,7 +198,7 @@ function BeingTreated({
               >
                 <Form.Control
                   type="text"
-                  value={`Date : ${beingTreated.day}-${beingTreated.month}-${beingTreated.year}`}
+                  value={format(beingTreated.start, "MMMM d, yyyy")}
                   disabled
                   readOnly
                 />
@@ -233,9 +211,10 @@ function BeingTreated({
               >
                 <Form.Control
                   type="text"
-                  value={`time : ${beingTreated.time}.00-${String(
-                    Number(beingTreated.time) + 1
-                  )}.00`}
+                  value={`${format(beingTreated.start, "hh.mm a")} - ${format(
+                    beingTreated.end,
+                    "hh.mm a"
+                  )}`}
                   disabled
                   readOnly
                 />
@@ -254,7 +233,7 @@ function BeingTreated({
                 flex: 1;
               `}
               onClick={() => {
-                handleAppointmentAndCheckOut(beingTreated.HN, beingTreated.id);
+                handleAppointmentAndCheckOut(beingTreated);
               }}
             >
               Appointment and Check Out
@@ -264,7 +243,7 @@ function BeingTreated({
                 flex: 1;
               `}
               onClick={() => {
-                handleCheckOut(beingTreated.id);
+                handleCheckOut(beingTreated);
               }}
             >
               Check out

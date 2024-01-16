@@ -1,13 +1,13 @@
 let doctors = [
   {
-    license: "113433",
+    _id: "113433",
     name: "David",
     branch: "SR",
     picture:
       "https://thumbs.dreamstime.com/b/confident-doctor-over-white-background-portrait-male-standing-vertical-shot-39366393.jpg",
   },
   {
-    license: "212163",
+    _id: "212163",
     name: "Alice",
     branch: "SR",
     picture:
