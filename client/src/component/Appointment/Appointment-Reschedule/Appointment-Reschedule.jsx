@@ -360,7 +360,7 @@ function AppointmentReschule() {
                   setSelectedTime(e.target.value);
                   console.log(selectedTime);
                 }}
-                defaultValuevalue={selectedTime}
+                defaultValue={selectedTime}
               >
                 <option value="09">9.00-10.00</option>
                 <option value="10">10.00-11.00</option>

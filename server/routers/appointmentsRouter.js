@@ -3,50 +3,43 @@ import { db } from "../utils/db.js";
 
 export const appointmentsRouter = Router();
 
-// Appointments endpoints
+appointmentsRouter.get("/", (req, res) => {});
 
-appointmentsRouter.get("/:id", (req, res) => {});
+appointmentsRouter.get("/on-date/:timeStamp", async (req, res) => {
+  try {
+    const appointmentsCollection = db.collection("appointments");
+    const timeStamp = Number(req.params.timeStamp);
 
-appointmentsRouter.get(
-  "/appointments-today/:todayTimeStamp",
-  async (req, res) => {
-    try {
-      const appointmentsCollection = db.collection("appointments");
-      const todayTimeStamp = Number(req.params.todayTimeStamp);
+    const startOfDay = new Date(timeStamp);
+    startOfDay.setHours(0, 0, 0, 0);
 
-      const startOfDay = new Date(todayTimeStamp);
-      startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(timeStamp);
+    endOfDay.setHours(23, 59, 59, 999);
 
-      const endOfDay = new Date(todayTimeStamp);
-      endOfDay.setHours(23, 59, 59, 999);
+    const appointments = await appointmentsCollection
+      .find({
+        start: {
+          $gte: startOfDay,
+          $lt: endOfDay,
+        },
+        status: { $in: ["booked", "being treated"] },
+      })
+      .toArray();
 
-      const appointmentToday = await appointmentsCollection
-        .find({
-          start: {
-            $gte: startOfDay,
-            $lt: endOfDay,
-          },
-          status: "booked",
-        })
-        .toArray();
-
-      res.json({ data: appointmentToday });
-    } catch (error) {
-      console.error("Error in appointmentsRouter:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
+    res.json({ data: appointments });
+  } catch (error) {
+    console.error("Error in appointmentsRouter:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-);
+});
 
-appointmentsRouter.get("/", async (req, res) => {
+appointmentsRouter.get("/treated", async (req, res) => {
   try {
     const appointmentsCollection = db.collection("appointments");
 
-    const status = req.query.status;
-
     const appointmentsFilteredByStatus = await appointmentsCollection
       .find({
-        status: status,
+        status: "being treated",
       })
       .toArray();
 

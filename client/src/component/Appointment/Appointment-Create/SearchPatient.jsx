@@ -19,7 +19,9 @@ function SearchPatient({
 
   const handleSearchPatients = async (event) => {
     event.preventDefault();
+
     const patientId = inputPatientHN;
+
     const foundPatient = await axios.get(
       `http://localhost:2001/patients/${patientId}`
     );
@@ -29,11 +31,12 @@ function SearchPatient({
       setShowButtonPatient(true);
     } else {
       alert("Patient not found");
-      setSearchPatients([foundPatient.data.data]);
+      setSearchPatients([]);
+      setShowButtonPatient(false);
     }
   };
 
-  const handleConfirmPatient = (id) => {
+  const handleConfirmPatient = () => {
     setShowButtonPatient(false);
   };
 
@@ -126,7 +129,7 @@ function SearchPatient({
               </FloatingLabel>
               <Button
                 onClick={() => {
-                  handleConfirmPatient(patient._id);
+                  handleConfirmPatient();
                 }}
                 css={css`
                   display: ${showButtonPatient ? "block" : "none"};

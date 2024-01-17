@@ -10,7 +10,6 @@ import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "react-time-picker/dist/TimePicker.css";
-import format from "date-fns/format";
 
 function SearchDoctor({
   setShowButtonDoctor,
@@ -119,6 +118,8 @@ function SearchDoctor({
               timeIntervals={60}
               dateFormat="MMMM d, yyyy HH:mm "
               timeCaption="Time"
+              minTime={new Date().setHours(9, 0, 0)}
+              maxTime={new Date().setHours(19, 0, 0)}
             />
           </div>
           <div

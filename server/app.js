@@ -3,7 +3,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { appointmentsRouter } from "./routers/appointmentsRouter.js";
 import { patientsRouter } from "./routers/patientsRouter.js";
-import { beingTreatedRouter } from "./routers/beingTreatedRouter.js";
+
 import { doctorsRouter } from "./routers/doctorsRouter.js";
 import { client } from "./utils/db.js";
 
@@ -23,7 +23,7 @@ async function init() {
 
   app.use("/appointments", appointmentsRouter);
   app.use("/patients", patientsRouter);
-  app.use("/beingTreated", beingTreatedRouter);
+
   app.use("/doctors", doctorsRouter);
 
   app.get("/", (req, res) => {
