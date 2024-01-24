@@ -15,7 +15,7 @@ export const features = [
   },
   {
     name: "Buy",
-    componentType: "Search",
+    componentType: "Buy",
     picture:
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQUhQTYRnuMqjvZoZ42pTJ0MF5UC8dTzqW6X0nvoxq-vO2rYL1WnncVvLx7ls1Q7qidyE&usqp=CAU",
     description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
@@ -30,16 +30,17 @@ export const features = [
   },
 
   {
-    name: "Doctors Info",
-    componentType: "<Doctors",
-    picture:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbvcveHjjyK1d3v5sNUNfqaz-xAbJLsFyVyQ&usqp=CAU",
-    description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-  },
-  {
     name: "Custom",
     componentType: "Custom",
     picture: "https://static.thenounproject.com/png/2397501-200.png",
+    description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+  },
+
+  {
+    name: "Tables",
+    componentType: "Tables",
+    picture:
+      "https://previews.123rf.com/images/bestvectorstock/bestvectorstock1808/bestvectorstock180810414/111745622-table-icon-vector-isolated-on-white-background-table-transparent-sign.jpg",
     description: "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
   },
 ];

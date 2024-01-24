@@ -9,6 +9,7 @@ appointmentsRouter.get("/on-date/:timeStamp", async (req, res) => {
   try {
     const appointmentsCollection = db.collection("appointments");
     const timeStamp = Number(req.params.timeStamp);
+    const branch = req.query.branch;
 
     const startOfDay = new Date(timeStamp);
     startOfDay.setHours(0, 0, 0, 0);
@@ -16,13 +17,18 @@ appointmentsRouter.get("/on-date/:timeStamp", async (req, res) => {
     const endOfDay = new Date(timeStamp);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const query = {};
+    if (branch) {
+      query.branch = branch;
+    }
+
     const appointments = await appointmentsCollection
       .find({
-        start: {
-          $gte: startOfDay,
-          $lt: endOfDay,
-        },
-        status: { $in: ["booked", "being treated"] },
+        $and: [
+          { start: { $gte: startOfDay } },
+          { start: { $lt: endOfDay } },
+          query,
+        ],
       })
       .toArray();
 

@@ -13,15 +13,19 @@ function LoginPage() {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin");
   const navigate = useNavigate();
-  const handleLogin = () => {
+
+  const handleLogin = (event) => {
+    event.preventDefault(); // Correct the typo
     if (username === "admin" && password === "admin") {
       setIsLogin(true);
       navigate("/branch");
-    } else
+    } else {
       alert(
         "The provided credentials are incorrect; please verify that the username and password entered are accurate."
       );
+    }
   };
+
   return (
     <div
       css={css`
@@ -50,41 +54,7 @@ function LoginPage() {
         >
           Clinic Management Software
         </h1>
-        {/* <form
-          onSubmit={handleLogin}
-          css={css`
-            display: flex;
-            flex-direction: column;
-            gap: 10%;
-          `}
-        >
-          <label>
-            Username:
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </label>
 
-          <label>
-            Password:
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-
-          <button
-            type="submit"
-            css={css`
-              width: 50%;
-            `}
-          >
-            Login
-          </button>
-        </form> */}
         <form
           onSubmit={handleLogin}
           css={css`
@@ -95,7 +65,7 @@ function LoginPage() {
           `}
         >
           <FloatingLabel
-            controlId="floatingInput" //for better accessibility
+            controlId="floatingInput"
             label="Username"
             className="mb-3"
           >

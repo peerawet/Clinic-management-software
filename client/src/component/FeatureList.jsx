@@ -24,7 +24,6 @@ function FeatureList() {
       >
         <Tabs
           defaultActiveKey="Check in"
-          id="uncontrolled-tab-example"
           className="mb-3"
           activeKey={activeTab}
           onSelect={(tab) => setActiveTab(tab)}
@@ -46,7 +45,6 @@ function FeatureList() {
                     <Card.Img
                       variant="top"
                       src={feature.picture}
-                      s
                       style={{ aspectRatio: "1/1" }}
                     />
                     <Card.Body>
@@ -93,7 +91,6 @@ function FeatureList() {
                     <Card.Img
                       variant="top"
                       src={feature.picture}
-                      s
                       style={{ aspectRatio: "1/1" }}
                     />
                     <Card.Body>

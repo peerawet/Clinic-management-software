@@ -1,16 +1,14 @@
 import { css } from "@emotion/react";
 /** @jsxImportSource @emotion/react */
 import { useState, useEffect } from "react";
-import PopUp from "./PopUp";
+import { useParams } from "react-router-dom";
 import TaskTable from "./TaskTable";
-import axios from "axios";
 import DatePicker from "react-datepicker";
 
 function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
   const [listAppointments, setListAppointments] = useState([]);
   const [selectDate, setSelectDate] = useState(new Date());
-  const [showModal, setShowModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const params = useParams();
 
   useEffect(() => {
     fetchAppointments();
@@ -21,9 +19,8 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
 
     try {
       const response = await fetch(
-        `http://localhost:2001/appointments/on-date/${dateToFetch}`
+        `http://localhost:2001/appointments/on-date/${dateToFetch}?branch=${params.id}`
       );
-
       if (!response.ok) {
         throw new Error(`Network response was not ok: ${response.status}`);
       }
@@ -74,15 +71,10 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
       />
       <TaskTable
         listAppointments={listAppointments}
-        setSelectedAppointment={setSelectedAppointment}
-        setShowModal={setShowModal}
         selectDate={selectDate}
-      />
-      <PopUp
-        selectedAppointment={selectedAppointment}
-        setSelectedAppointment={setSelectedAppointment}
-        showModal={showModal}
-        setShowModal={setShowModal}
+        fetchAppointments={fetchAppointments}
+        setActiveTab={setActiveTab}
+        setSearchPatients={setSearchPatients}
       />
     </>
   );

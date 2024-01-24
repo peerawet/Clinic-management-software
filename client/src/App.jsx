@@ -3,6 +3,7 @@ import HomePage from "./page/HomePage";
 import LoginPage from "./page/LoginPage";
 import BranchPage from "./page/BranchPage";
 import { useState, createContext, useEffect } from "react";
+
 export const IsLoginContext = createContext();
 
 function App() {
@@ -17,6 +18,10 @@ function App() {
     <IsLoginContext.Provider value={{ isLogin, setIsLogin }}>
       <BrowserRouter>
         <Routes>
+          <Route
+            path="/"
+            element={isLogin ? <Navigate to="/branch" /> : <LoginPage />}
+          />
           <Route
             path="/login"
             element={isLogin ? <Navigate to="/branch" /> : <LoginPage />}

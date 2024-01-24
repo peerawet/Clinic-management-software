@@ -1,23 +1,22 @@
 import Tab from "react-bootstrap/Tab";
 import Tabs from "react-bootstrap/Tabs";
-import CustomAppointments from "./CustomAppointments";
-import CustomPatients from "./CustomPatients";
-import CustomDoctors from "./CustomDoctors";
+import Courses from "./Courses";
+
 function Custom() {
   return (
     <Tabs
-      defaultActiveKey="profile"
+      defaultActiveKey="Courses"
       id="uncontrolled-tab-example"
       className="mb-3"
     >
-      <Tab eventKey="Appointments" title="Appointments">
-        <CustomAppointments />
-      </Tab>
-      <Tab eventKey="Patients" title="Patients">
-        <CustomPatients />
+      <Tab eventKey="Courses" title="Courses">
+        <Courses />
       </Tab>
       <Tab eventKey="Doctors" title="Doctors">
-        <CustomDoctors />
+        asd
+      </Tab>
+      <Tab eventKey="Branchs" title="Branchs">
+        asd
       </Tab>
     </Tabs>
   );

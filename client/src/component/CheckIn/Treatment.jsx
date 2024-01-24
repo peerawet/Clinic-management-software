@@ -1,60 +1,94 @@
-import FloatingLabel from "react-bootstrap/FloatingLabel";
-import Form from "react-bootstrap/Form";
-import { Button } from "react-bootstrap";
+import { Form } from "react-bootstrap";
 import { css } from "@emotion/react";
+import { Axios } from "axios";
 /** @jsxImportSource @emotion/react */
 import axios from "axios";
-import { useEffect, useState } from "react";
-import Accordion from "react-bootstrap/Accordion";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
-function Treatment() {
-  const [physicalTherapy, setPhysicalTherapy] = useState(false);
-  const [shockWaveTherapy, setShockWaveTherapy] = useState(false);
-  const [highLaserTherapy, setHighLaserTherapy] = useState(false);
-  const [stretchTherapy, setStretchTherapy] = useState(false);
-  const [massage, setMassage] = useState(false);
+function Treatment({
+  setSelectedAppointment,
+  treatments,
+  selectedAppointment,
+  patientCourses,
+}) {
+  const params = useParams();
+  const renderCourseInfo = (treatmentId) => {
+    const courses = patientCourses.filter(
+      (patientCourse) =>
+        (patientCourse.treatment_id === treatmentId) &
+        (patientCourse.permitted[params.id] === true)
+    );
+    const count = courses.length;
+    return courses.length > 0 && <div>มี {count} คอร์ส</div>;
+  };
+
   return (
-    <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Treatment</Accordion.Header>
-        <Accordion.Body>
-          <Form>
+    <div
+      css={css`
+        display: flex;
+        flex-direction: column;
+      `}
+    >
+      <h5>Please select treatments</h5>
+      <Form
+        css={css`
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        `}
+      >
+        {treatments.map((treatment) => (
+          <div
+            key={treatment._id}
+            css={css`
+              display: flex;
+              gap: 1rem;
+            `}
+          >
             <Form.Check
               type="switch"
-              label="Physical therapy"
-              onChange={() => setPhysicalTherapy(!physicalTherapy)}
-            />
+              label={treatment.name}
+              onChange={() => {
+                const updatedTreatmentInfo =
+                  selectedAppointment.treatmentInfo.map((treatmentInfo) =>
+                    treatmentInfo._id === treatment._id
+                      ? {
+                          ...treatmentInfo,
+                          isSelected: !treatmentInfo.isSelected,
+                        }
+                      : treatmentInfo
+                  );
 
-            <Form.Check
-              type="switch"
-              label="Shock wave therapy"
-              onChange={() => setShockWaveTherapy(!shockWaveTherapy)}
+                setSelectedAppointment({
+                  ...selectedAppointment,
+                  treatmentInfo: updatedTreatmentInfo,
+                });
+              }}
             />
-            <Form.Check
-              type="switch"
-              label="High laser therapy"
-              onChange={() => setHighLaserTherapy(!highLaserTherapy)}
-            />
-            <Form.Check
-              type="switch"
-              label="Streth therapy"
-              onChange={() => setStretchTherapy(!stretchTherapy)}
-            />
-            <Form.Check
-              type="switch"
-              label="Massage"
-              onChange={() => setMassage(!massage)}
-            />
-            {physicalTherapy && <p>Display content for Physical therapy</p>}
-            {shockWaveTherapy && <p>Display content for Shock wave therapy</p>}
-            {highLaserTherapy && <p>Display content for High laser therapy</p>}
-            {stretchTherapy && <p>Display content for Stretch therapy</p>}
-            {massage && <p>Display content for Massage</p>}
-          </Form>
-        </Accordion.Body>
-      </Accordion.Item>
-    </Accordion>
+            {renderCourseInfo(treatment._id)}
+          </div>
+        ))}
+      </Form>
+    </div>
   );
 }
 
 export default Treatment;
+
+// const cloneSelectedAppoinment = { ...selectedAppointment };
+// setSelectedAppointment({
+//   ...cloneSelectedAppoinment,
+//   treatmentInfo: {
+//     ...cloneSelectedAppoinment.treatmentInfo,
+//     [treatment.name]:
+//       !cloneSelectedAppoinment.treatmentInfo?.[treatment.name],
+//   },
+// });
+// setSelectedAppointment((prevState) => ({
+//   ...prevState,
+//   treatmentInfo: {
+//     ...prevState.treatmentInfo,
+//     [treatment.name]: !prevState.treatmentInfo?.[treatment.name],
+//   },
+// }));
