@@ -6,9 +6,12 @@ import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import axios from "axios";
 import { useState } from "react";
+import FloatingLabel from "react-bootstrap/FloatingLabel";
+import InputGroup from "react-bootstrap/InputGroup";
 
 function InputPupUp({ show, setShow, selectedCourse, inputHn, setInputHn }) {
   const [selectedPatient, setSelectedPatient] = useState({});
+  const [inputDiscount, setInputDiscount] = useState(0);
   const handleBuy = async (e) => {
     e.preventDefault();
     try {
@@ -24,11 +27,16 @@ function InputPupUp({ show, setShow, selectedCourse, inputHn, setInputHn }) {
         const patient_id = inputHn;
         const course_id = selectedCourse._id;
         const remaining = selectedCourse.total;
+        const discount = Number(inputDiscount);
+        const price =
+          selectedCourse.price - (selectedCourse.price * inputDiscount) / 100;
 
         await axios.post(`http://localhost:2001/courses_patients/`, {
           patient_id: patient_id,
           course_id: course_id,
           remaining: remaining,
+          discount: discount,
+          price: price,
         });
         alert(`${inputHn} has bought successfully`);
         setInputHn("");
@@ -41,7 +49,7 @@ function InputPupUp({ show, setShow, selectedCourse, inputHn, setInputHn }) {
 
   return (
     <Modal show={show} onHide={() => setShow(false)}>
-      <Card className="bg-dark text-white">
+      <Card className="bg-dark text-black">
         <Card.Img
           src={selectedCourse.picture}
           alt="Card image"
@@ -58,20 +66,61 @@ function InputPupUp({ show, setShow, selectedCourse, inputHn, setInputHn }) {
             gap: 2rem;
           `}
         >
-          <Card.Title>
-            <h3>{selectedCourse.name}</h3>
-          </Card.Title>
-
-          <Form onSubmit={handleBuy}>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-              <Form.Label>Patient HN</Form.Label>
+          <div
+            css={css`
+              background-color: rgba(255, 255, 255, 0.5);
+              width: fit-content;
+            `}
+          >
+            <Card.Title>
+              <h3>{selectedCourse.name}</h3>
+            </Card.Title>
+          </div>
+          <Form
+            onSubmit={handleBuy}
+            css={css`
+              display: flex;
+              flex-direction: column;
+              gap: 1rem;
+            `}
+          >
+            <FloatingLabel controlId="floatingInput" label="ราคาสุทธิ">
+              <Form.Control
+                type="number"
+                value={
+                  selectedCourse.price -
+                  (selectedCourse.price * inputDiscount) / 100
+                }
+                disabled
+              />
+            </FloatingLabel>
+            <FloatingLabel controlId="floatingInput" label="Patient HN">
               <Form.Control
                 type="text"
-                autoFocus
                 onChange={(e) => setInputHn(e.target.value)}
                 value={inputHn}
               />
-            </Form.Group>
+            </FloatingLabel>
+
+            <InputGroup
+              className="mb-3"
+              css={css`
+                width: 50%;
+              `}
+            >
+              <Form.Control
+                placeholder="ส่วนลด"
+                aria-label="Recipient's username"
+                aria-describedby="basic-addon2"
+                type="number"
+                value={inputDiscount}
+                onChange={(e) => {
+                  setInputDiscount(e.target.value);
+                }}
+              />
+              <InputGroup.Text id="basic-addon2">%</InputGroup.Text>
+            </InputGroup>
+
             <Button
               type="submit"
               css={css`

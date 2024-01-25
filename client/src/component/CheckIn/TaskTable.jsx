@@ -70,6 +70,7 @@ function TaskTable({
       };
 
       setSelectedAppointment(updatedAppointment);
+      console.log(selectedAppointment);
       setShowModal(true);
     }
     getCoursesOfPatient(appointment);
@@ -83,6 +84,7 @@ function TaskTable({
 
       const coursesUpdate = response.data.data;
       setPatientCourses(coursesUpdate);
+      console.log(patientCourses);
     } catch (error) {
       console.error("Error fetching courses for the patient", error);
     }

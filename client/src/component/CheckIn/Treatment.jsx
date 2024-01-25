@@ -16,8 +16,8 @@ function Treatment({
   const renderCourseInfo = (treatmentId) => {
     const courses = patientCourses.filter(
       (patientCourse) =>
-        (patientCourse.treatment_id === treatmentId) &
-        (patientCourse.permitted[params.id] === true)
+        (patientCourse.courseInfo.treatment_id === treatmentId) &
+        (patientCourse.courseInfo.permitted[params.id] === true)
     );
     const count = courses.length;
     return courses.length > 0 && <div>มี {count} คอร์ส</div>;

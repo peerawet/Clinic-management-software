@@ -44,60 +44,25 @@ courses_patientsRouter.get("/course-info/:patient_id", async (req, res) => {
   const patient_id = req.params.patient_id;
 
   try {
-    const coursePatientResults = await db
+    const result = await db
       .collection("courses_patients")
-      .find({ patient_id })
+      .aggregate([
+        {
+          $match: { patient_id: patient_id },
+        },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "course_id",
+            foreignField: "_id",
+            as: "courseInfo",
+          },
+        },
+        {
+          $unwind: "$courseInfo",
+        },
+      ])
       .toArray();
-
-    const result = await Promise.all(
-      coursePatientResults.map(async (coursePatient) => {
-        const courseInfo = await db
-          .collection("courses")
-          .findOne({ _id: coursePatient.course_id });
-
-        return {
-          ...courseInfo,
-          patient_id,
-          remaining: coursePatient.remaining,
-        };
-      })
-    );
-
-    return res.json({
-      data: result,
-      message:
-        "Course information retrieved successfully for the given patient",
-    });
-  } catch (error) {
-    console.error("Error fetching course information by patient_id", error);
-    return res.status(500).json({
-      error: "Internal server error",
-    });
-  }
-});
-
-courses_patientsRouter.get("/course-info/:patient_id", async (req, res) => {
-  const patient_id = req.params.patient_id;
-
-  try {
-    const coursePatientResults = await db
-      .collection("courses_patients")
-      .find({ patient_id })
-      .toArray();
-
-    const result = await Promise.all(
-      coursePatientResults.map(async (coursePatient) => {
-        const courseInfo = await db
-          .collection("courses")
-          .findOne({ _id: coursePatient.course_id });
-
-        return {
-          ...courseInfo,
-          patient_id,
-          remaining: coursePatient.remaining,
-        };
-      })
-    );
 
     return res.json({
       data: result,

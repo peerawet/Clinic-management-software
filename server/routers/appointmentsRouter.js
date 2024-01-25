@@ -23,13 +23,39 @@ appointmentsRouter.get("/on-date/:timeStamp", async (req, res) => {
     }
 
     const appointments = await appointmentsCollection
-      .find({
-        $and: [
-          { start: { $gte: startOfDay } },
-          { start: { $lt: endOfDay } },
-          query,
-        ],
-      })
+      .aggregate([
+        {
+          $match: {
+            $and: [
+              { start: { $gte: startOfDay } },
+              { start: { $lt: endOfDay } },
+              query,
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "patients",
+            localField: "HN",
+            foreignField: "_id",
+            as: "patientInfo",
+          },
+        },
+        {
+          $unwind: "$patientInfo", // Corrected alias
+        },
+        {
+          $lookup: {
+            from: "doctors",
+            localField: "license",
+            foreignField: "_id",
+            as: "doctorInfo",
+          },
+        },
+        {
+          $unwind: "$doctorInfo", // Corrected alias
+        },
+      ])
       .toArray();
 
     res.json({ data: appointments });
