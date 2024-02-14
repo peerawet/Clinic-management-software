@@ -3,7 +3,28 @@ import { db } from "../utils/db.js";
 
 export const doctorsRouter = Router();
 // Doctors endpoints
-doctorsRouter.get("/", (req, res) => {});
+doctorsRouter.get("/", async (req, res) => {
+  const collection = db.collection("doctors");
+
+  try {
+    const doctors = await collection.find({}).toArray();
+
+    if (doctors.length === 0) {
+      return res.status(404).json({
+        error: "No doctors found",
+      });
+    }
+
+    return res.json({
+      data: doctors,
+    });
+  } catch (error) {
+    console.error("Error retrieving doctors", error);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
 
 doctorsRouter.get("/:_id", async (req, res) => {
   const collection = db.collection("doctors");
@@ -12,7 +33,7 @@ doctorsRouter.get("/:_id", async (req, res) => {
   if (doctor) {
     res.json({ data: doctor });
   } else {
-    res.status(404).json({ error: "Patient not found" });
+    res.status(404).json({ error: "Doctor not found" });
   }
 });
 
@@ -71,8 +92,74 @@ doctorsRouter.get("/available/:branch", async (req, res) => {
   }
 });
 
-doctorsRouter.post("/", (req, res) => {});
+doctorsRouter.post("/", async (req, res) => {
+  const collection = db.collection("doctors");
 
-doctorsRouter.put("/:license", (req, res) => {});
+  try {
+    await collection.insertOne(req.body);
 
-doctorsRouter.delete("/:license", (req, res) => {});
+    return res.status(201).json({
+      message: "Doctor created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating doctor", error);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
+doctorsRouter.put("/:id", async (req, res) => {
+  const collection = db.collection("doctors");
+  const doctorId = req.params.id;
+  const { name, branch, picture } = req.body;
+
+  const updatedDoctor = {
+    name,
+    branch,
+    picture,
+  };
+
+  try {
+    const result = await collection.updateOne(
+      { _id: doctorId },
+      { $set: updatedDoctor }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        error: "Doctor not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Doctor updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating doctor", error);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
+doctorsRouter.get("/branch/:branch_id", async (req, res) => {
+  const collection = db.collection("doctors");
+
+  try {
+    const doctors = await collection
+      .find({ branch: req.params.branch_id })
+      .toArray();
+
+    if (doctors.length > 0) {
+      res.json({ data: doctors });
+    } else {
+      res
+        .status(404)
+        .json({ error: "Doctors not found for the specified branch" });
+    }
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});

@@ -23,6 +23,8 @@ function PopUp({
   setActiveTab,
   setSearchPatients,
   patientCourses,
+  paymentMethods,
+  setPaymentMethods,
 }) {
   const [treatments, setTreatments] = useState([]);
   useEffect(() => {
@@ -123,8 +125,15 @@ function PopUp({
     <>
       {selectedAppointment && (
         <Modal show={showModal} onHide={handleCloseModal} keyboard={false}>
-          <Modal.Header closeButton>
+          <Modal.Header
+            closeButton
+            css={css`
+              display: flex;
+              flex-direction: column;
+            `}
+          >
             <Modal.Title>{selectedAppointment._id}</Modal.Title>
+            <Modal.Title>Status : ({selectedAppointment.status})</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <div
@@ -164,6 +173,8 @@ function PopUp({
                 fetchAppointments={fetchAppointments}
                 handleShowModal={handleShowModal}
                 patientCourses={patientCourses}
+                paymentMethods={paymentMethods}
+                setPaymentMethods={setPaymentMethods}
               />
             </div>
           </Modal.Body>

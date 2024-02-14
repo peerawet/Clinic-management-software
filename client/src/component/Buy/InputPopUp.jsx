@@ -37,6 +37,7 @@ function InputPupUp({ show, setShow, selectedCourse, inputHn, setInputHn }) {
           remaining: remaining,
           discount: discount,
           price: price,
+          buyDate: new Date(),
         });
         alert(`${inputHn} has bought successfully`);
         setInputHn("");

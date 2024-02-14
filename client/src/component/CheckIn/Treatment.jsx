@@ -13,14 +13,16 @@ function Treatment({
   patientCourses,
 }) {
   const params = useParams();
+
   const renderCourseInfo = (treatmentId) => {
     const courses = patientCourses.filter(
       (patientCourse) =>
-        (patientCourse.courseInfo.treatment_id === treatmentId) &
-        (patientCourse.courseInfo.permitted[params.id] === true)
+        patientCourse.courseInfo.treatment_id === treatmentId &&
+        patientCourse.courseInfo.permitted[params.id] === true
     );
+
     const count = courses.length;
-    return courses.length > 0 && <div>มี {count} คอร์ส</div>;
+    return count > 0 && <div>มี {count} คอร์ส</div>;
   };
 
   return (
@@ -46,27 +48,32 @@ function Treatment({
               gap: 1rem;
             `}
           >
-            <Form.Check
-              type="switch"
-              label={treatment.name}
-              onChange={() => {
-                const updatedTreatmentInfo =
-                  selectedAppointment.treatmentInfo.map((treatmentInfo) =>
-                    treatmentInfo._id === treatment._id
-                      ? {
-                          ...treatmentInfo,
-                          isSelected: !treatmentInfo.isSelected,
-                        }
-                      : treatmentInfo
-                  );
+            {treatment.allow[params.id] && (
+              <>
+                <Form.Check
+                  type="switch"
+                  label={treatment.name}
+                  onChange={() => {
+                    const updatedTreatmentInfo =
+                      selectedAppointment.treatmentInfo.map((treatmentInfo) =>
+                        treatmentInfo._id === treatment._id
+                          ? {
+                              ...treatmentInfo,
+                              isSelected: !treatmentInfo.isSelected,
+                            }
+                          : treatmentInfo
+                      );
 
-                setSelectedAppointment({
-                  ...selectedAppointment,
-                  treatmentInfo: updatedTreatmentInfo,
-                });
-              }}
-            />
-            {renderCourseInfo(treatment._id)}
+                    setSelectedAppointment({
+                      ...selectedAppointment,
+                      treatmentInfo: updatedTreatmentInfo,
+                    });
+                    console.log(selectedAppointment);
+                  }}
+                />
+                {renderCourseInfo(treatment._id)}
+              </>
+            )}
           </div>
         ))}
       </Form>

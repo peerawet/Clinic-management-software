@@ -2,50 +2,60 @@ import Table from "react-bootstrap/Table";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
+import Form from "react-bootstrap/Form";
 
-function CustomDoctors() {
-  const [doctors, setDoctors] = useState([]);
-  const tableHeading = ["License", "Name", "Branch"];
+function Branchs() {
+  const [inputName, setInputName] = useState("");
+  const [inputId, setInputId] = useState("");
 
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
 
-  const fetchDoctors = async () => {
+    if (!inputName || !inputId) {
+      return;
+    }
+
     try {
-      const response = await axios.get("http://localhost:2001/doctors");
-      const data = response.data.data;
-      setDoctors(data);
+      axios.post("http://localhost:2001/branchs", {
+        name: inputName,
+        _id: inputId,
+        picture:
+          "https://apis.airportthai.co.th/microsite/images/post/ckeditor/shutterstock_313815821.jpg",
+      });
+
+      setInputName("");
+      setInputId("");
+      alert("branch has been created");
     } catch (error) {
-      console.error("Error fetching appointments:", error);
+      console.error("Error adding branch:", error);
     }
   };
 
   return (
     <>
-      <Button onClick={fetchDoctors}>Refresh</Button>
-      <Table responsive>
-        <thead>
-          <tr>
-            <th>#</th>
-            {tableHeading.map((heading, index) => (
-              <th key={index}>{heading}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {doctors.map((doctor, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{doctor.license}</td>
-              <td>{doctor.name}</td>
-              <td>{doctor.branch}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+      <Form onSubmit={handleFormSubmit}>
+        <Form.Group className="mb-3">
+          <Form.Label>Branch name</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Sriracha"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+          />
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>ชื่อย่อ(ID)</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="SR"
+            value={inputId}
+            onChange={(e) => setInputId(e.target.value)}
+          />
+        </Form.Group>
+        <Button type="submit">เพิ่มสาขา</Button>
+      </Form>
     </>
   );
 }
 
-export default CustomDoctors;
+export default Branchs;

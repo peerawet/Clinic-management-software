@@ -15,33 +15,13 @@ function Receipt({
   handleShowModal,
   setSelectedAppointment,
   patientCourses,
+  paymentMethods,
+  setPaymentMethods,
 }) {
   const params = useParams();
   const [noPromotionPrices, setNoPromotionPrices] = useState({}); //{PT: 2700, SWT: 2200, HLT: 1700, ST: 1400}
   const [promotionPrices, setPromotionPrices] = useState({}); //{PT: 1550, SWT: 1650,}
-  const [paymentMethods, setPaymentMethods] = useState({}); //{PT: _id, SWT:  _id, HLT: "cash", ST: "tranfer"}
-
-  useEffect(() => {
-    if (
-      selectedAppointment.status === "paid" ||
-      selectedAppointment.status === "being treated" ||
-      selectedAppointment.status === "completed"
-    ) {
-      const response = axios.get(
-        `http://localhost:2001/receipts_treatments/receipt/${selectedAppointment._id}`
-      );
-      const paymentMethodsInEachTreatment = response.data.data;
-
-      const updatedPaymentMethods = {};
-
-      paymentMethodsInEachTreatment.forEach((item) => {
-        updatedPaymentMethods[item.treatment_id] = item.paymentMethods;
-      });
-      console.log(updatedPaymentMethods);
-
-      setPaymentMethods(updatedPaymentMethods);
-    }
-  }, [selectedAppointment]);
+  //const [paymentMethods, setPaymentMethods] = useState({}); //{PT: _id, SWT:  _id, HLT: "cash", ST: "tranfer"}
 
   //calculate total no promotion price
   const totalNoPromotionPrice = Object.values(noPromotionPrices).reduce(
@@ -81,19 +61,21 @@ function Receipt({
     });
 
     setNoPromotionPrices(newTotalPrices);
-    console.log(noPromotionPrices);
   }, [selectedAppointment, treatments, patientCourses, paymentMethods]);
 
   //calculate promotion price object
   useEffect(() => {
-    const newPromotionPrices = {};
+    console.log("treatments:", treatments);
+    console.log("patientCourses:", patientCourses);
+    console.log("paymentMethods:", paymentMethods);
+    let newPromotionPrices = {};
 
     treatments.forEach((treatment) => {
       const course = patientCourses.find(
         (c) => paymentMethods[treatment._id] === c._id
       );
 
-      if (course) {
+      if (course && course.courseInfo) {
         const promotionPriceForTreatment =
           course.price / course.courseInfo.total;
         newPromotionPrices[treatment._id] = promotionPriceForTreatment;

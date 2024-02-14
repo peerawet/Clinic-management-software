@@ -4,8 +4,9 @@ import axios from "axios";
 import Table from "react-bootstrap/Table";
 import { useState } from "react";
 import PopUp from "./PopUp";
-
+import { Button } from "react-bootstrap";
 import ProgressBar from "react-bootstrap/ProgressBar";
+import NewAppointment from "./newAppointment";
 
 function TaskTable({
   listAppointments,
@@ -13,10 +14,14 @@ function TaskTable({
   selectDate,
   setActiveTab,
   setSearchPatients,
+  listDoctors,
 }) {
+  const [selectedAdd, setSelectedAdd] = useState({});
+  const [show, setShow] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState({});
   const [patientCourses, setPatientCourses] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState({}); //{PT: _id, SWT:  _id, HLT: "cash", ST: "tranfer"}
 
   const handleShowModal = async (appointment) => {
     if (appointment.status === "booked" || appointment.status === "check in") {
@@ -35,20 +40,18 @@ function TaskTable({
         };
 
         setSelectedAppointment(updatedAppointment);
-        console.log(updatedAppointment);
+        setPaymentMethods({});
+        console.log("paymentMethods:", paymentMethods);
         setShowModal(true);
       } catch (error) {
         console.error("Error fetching treatments", error);
       }
     } else {
-      const receiptsResponse = await axios.get(
-        `http://localhost:2001/receipts/appointment/${appointment._id}`
-      );
-      const receipts = receiptsResponse.data.data;
-
       const receiptsTreatmentsResponse = await axios.get(
-        `http://localhost:2001/receipts_treatments/receipt/${receipts[0]._id}`
+        `http://localhost:2001/receipts_treatments/find_by_appointment_id/${appointment._id}`
       );
+      console.log(receiptsTreatmentsResponse.data.data);
+
       const receiptsTreatments = receiptsTreatmentsResponse.data.data;
       const paidTreatmentIds = receiptsTreatments.map(
         (treatmentId) => treatmentId.treatment_id
@@ -70,10 +73,20 @@ function TaskTable({
       };
 
       setSelectedAppointment(updatedAppointment);
-      console.log(selectedAppointment);
+
+      const updatedPaymentMethods = {};
+
+      receiptsTreatments.forEach((item) => {
+        updatedPaymentMethods[item.treatment_id] = item.paymentMethods;
+      });
+      console.log(updatedPaymentMethods);
+
+      setPaymentMethods(updatedPaymentMethods);
+
       setShowModal(true);
     }
     getCoursesOfPatient(appointment);
+    console.log(selectedAppointment);
   };
 
   const getCoursesOfPatient = async (appointment) => {
@@ -103,114 +116,130 @@ function TaskTable({
     timestampsArray.push(time);
   }
 
-  const accessDoctors = listAppointments.map(
-    (appointment) => appointment.doctorInfo.name
-  );
-  const doctors = Array.from(new Set(accessDoctors));
+  const accessDoctors = listDoctors.map((doctor) => doctor.name);
+  const doctors = listDoctors;
+
+  const handleButtonClick = async (time, doctorId) => {
+    setShow(true);
+
+    setSelectedAdd({ date: time, id: doctorId });
+  };
 
   return (
     <>
-      {listAppointments.length > 0 && (
-        <>
-          {" "}
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th></th>
-                {doctors.map((doctor, index) => (
-                  <th
-                    key={index}
-                    css={css`
-                      text-align: center;
-                    `}
-                  >
-                    {doctor}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {timestampsArray.map((timestamp, rowIndex) => {
-                const doctorAppointments = doctors.map((doctor) =>
-                  listAppointments.filter(
-                    (appointment) => appointment.doctorInfo.name === doctor
-                  )
-                );
+      <Table striped bordered hover>
+        <thead>
+          <tr>
+            <th></th>
+            {doctors.map((doctor, index) => (
+              <th
+                key={index}
+                css={css`
+                  text-align: center;
+                `}
+              >
+                {doctor.name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {timestampsArray.map((timestamp, rowIndex) => {
+            const doctorAppointments = doctors.map((doctor) =>
+              listAppointments.filter(
+                (appointment) => appointment.doctorInfo.name === doctor.name
+              )
+            );
 
-                return (
-                  <tr key={rowIndex}>
+            return (
+              <tr key={rowIndex}>
+                <td
+                  css={css`
+                    text-align: center;
+                    width: 10%;
+                  `}
+                >
+                  {new Date(timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </td>
+                {doctorAppointments.map((appointments, colIndex) => {
+                  const matchingAppointment = appointments.find(
+                    (appointment) =>
+                      new Date(appointment.start).getTime() === timestamp
+                  );
+
+                  return (
                     <td
+                      key={colIndex}
                       css={css`
                         text-align: center;
+                        width: 20%;
                       `}
                     >
-                      {new Date(timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    {doctorAppointments.map((appointments, colIndex) => {
-                      const matchingAppointment = appointments.find(
-                        (appointment) =>
-                          new Date(appointment.start).getTime() === timestamp
-                      );
-
-                      return (
-                        <td
-                          key={colIndex}
-                          css={css`
-                            text-align: center;
-                          `}
+                      {matchingAppointment ? (
+                        <div
+                          variant="primary"
+                          onClick={() => handleShowModal(matchingAppointment)}
                         >
-                          {matchingAppointment && (
-                            <div
-                              variant="primary"
-                              onClick={() =>
-                                handleShowModal(matchingAppointment)
-                              }
-                            >
-                              {matchingAppointment.patientInfo.name}/
-                              {matchingAppointment.HN}
-                              {matchingAppointment.status === "booked" && (
-                                <ProgressBar variant="danger" now={0} />
-                              )}
-                              {matchingAppointment.status === "check in" && (
-                                <ProgressBar variant="danger" now={20} />
-                              )}
-                              {matchingAppointment.status === "paid" && (
-                                <ProgressBar variant="warning" now={40} />
-                              )}
-                              {matchingAppointment.status ===
-                                "being treated" && (
-                                <ProgressBar variant="info" now={60} />
-                              )}
-                              {matchingAppointment.status === "completed" && (
-                                <ProgressBar variant="success" now={100} />
-                              )}
-                            </div>
+                          {matchingAppointment.patientInfo.name}/
+                          {matchingAppointment.HN}
+                          {matchingAppointment.status === "booked" && (
+                            <ProgressBar variant="danger" now={0} />
                           )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
-          <PopUp
-            selectedAppointment={selectedAppointment}
-            setSelectedAppointment={setSelectedAppointment}
-            showModal={showModal}
-            setShowModal={setShowModal}
-            fetchAppointments={fetchAppointments}
-            handleShowModal={handleShowModal}
-            setActiveTab={setActiveTab}
-            setSearchPatients={setSearchPatients}
-            patientCourses={patientCourses}
-          />
-        </>
-      )}
-      {listAppointments.length === 0 && <div>no appointments on this day</div>}
+                          {matchingAppointment.status === "check in" && (
+                            <ProgressBar variant="danger" now={20} />
+                          )}
+                          {matchingAppointment.status === "paid" && (
+                            <ProgressBar variant="warning" now={40} />
+                          )}
+                          {matchingAppointment.status === "being treated" && (
+                            <ProgressBar variant="info" now={60} />
+                          )}
+                          {matchingAppointment.status === "completed" && (
+                            <ProgressBar variant="success" now={100} />
+                          )}
+                        </div>
+                      ) : (
+                        // Render a button when there is no matching appointment
+                        <img
+                          src="https://e7.pngegg.com/pngimages/528/654/png-clipart-plus-plus-thumbnail.png"
+                          onClick={() =>
+                            handleButtonClick(timestamp, doctors[colIndex]._id)
+                          }
+                          css={css`
+                            width: 20px;
+                          `}
+                        ></img>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+      <PopUp
+        selectedAppointment={selectedAppointment}
+        setSelectedAppointment={setSelectedAppointment}
+        showModal={showModal}
+        setShowModal={setShowModal}
+        fetchAppointments={fetchAppointments}
+        handleShowModal={handleShowModal}
+        setActiveTab={setActiveTab}
+        setSearchPatients={setSearchPatients}
+        patientCourses={patientCourses}
+        paymentMethods={paymentMethods}
+        setPaymentMethods={setPaymentMethods}
+      />
+      <NewAppointment
+        setShow={setShow}
+        show={show}
+        selectedAdd={selectedAdd}
+        fetchAppointments={fetchAppointments}
+      />
     </>
   );
 }

@@ -8,7 +8,7 @@ courses_patientsRouter.post("/", async (req, res) => {
   const collection = db.collection("courses_patients");
 
   try {
-    await collection.insertOne(req.body);
+    await collection.insertOne({ ...req.body, buyDate: new Date() });
 
     return res.json({
       message: "Course patient data inserted successfully",

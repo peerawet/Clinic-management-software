@@ -50,3 +50,20 @@ branchsRouter.get("/:id", async (req, res) => {
     });
   }
 });
+
+branchsRouter.post("/", async (req, res) => {
+  const collection = db.collection("branchs");
+
+  try {
+    await collection.insertOne(req.body);
+
+    return res.status(201).json({
+      message: "Branch created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating branch", error);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});

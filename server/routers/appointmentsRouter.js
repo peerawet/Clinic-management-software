@@ -42,7 +42,7 @@ appointmentsRouter.get("/on-date/:timeStamp", async (req, res) => {
           },
         },
         {
-          $unwind: "$patientInfo", // Corrected alias
+          $unwind: "$patientInfo",
         },
         {
           $lookup: {

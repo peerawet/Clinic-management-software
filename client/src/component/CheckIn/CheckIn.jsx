@@ -9,9 +9,11 @@ import axios from "axios";
 function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
   const [listAppointments, setListAppointments] = useState([]);
   const [selectDate, setSelectDate] = useState(new Date());
+  const [listDoctors, setListDoctors] = useState([]);
   const params = useParams();
 
   useEffect(() => {
+    getdoctor();
     fetchAppointments();
   }, [activeTab, selectDate]);
 
@@ -29,6 +31,14 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
     }
   };
 
+  const getdoctor = async () => {
+    const response = await axios.get(
+      `http://localhost:2001/doctors/branch/${params.id}`
+    );
+    console.log(listDoctors);
+    setListDoctors(response.data.data);
+  };
+
   return (
     <>
       <DatePicker
@@ -43,6 +53,7 @@ function CheckIn({ setActiveTab, setSearchPatients, activeTab }) {
         fetchAppointments={fetchAppointments}
         setActiveTab={setActiveTab}
         setSearchPatients={setSearchPatients}
+        listDoctors={listDoctors}
       />
     </>
   );
